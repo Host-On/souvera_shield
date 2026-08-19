@@ -1,0 +1,55 @@
+{
+  "summary": "Backend-only verification of Souvera Shield v3.3.9 bugfix (Mail-Test-Relay reads Nextcloud's own mail_* system-config keys instead of souvera_central.stalwart_* keys). All 13 review-request requirements verified: PHPUnit 40/40 green (104 assertions), reflection_check + l10n_di_check green, PHP-syntax of 4 changed lib files + 2 test files error-free, info.xml bumped to 3.3.9, no residual references to forbidden legacy identifiers (stalwart_admin_user, stalwart_admin_password, stalwart_api_url, stalwart_mailtest, shield-mailtest, fromCentralSystemConfig, smtpUserIsMailboxAddress) anywhere in lib/ or tests/unit/.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/unit/Service/MailTestRelayConfigTest.php",
+    "/app/tests/unit/Service/MailTestServiceDiagnosticsTest.php",
+    "/app/tests/reflection_check.php",
+    "/app/tests/l10n_di_check.php",
+    "/app/test_reports/pytest/phpunit_iteration_17.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "MailTestRelayConfig::fromNextcloudMailConfig(IConfig) (Zeile 52-86) liest ausschliesslich mail_smtphost/mail_smtpport/mail_smtpname/mail_smtppassword/mail_smtpauth/mail_smtpsecure – KEINE souvera_central.*-Keys mehr, wie gefordert.",
+    "Neue Felder auf MailTestRelayConfig: authRequired (bool) + securityMode ('none'|'tls'|'ssl'). Auto-Upgrade auf 'ssl' bei Port 465 (Zeile 74-76). authRequired=false wenn weder mail_smtpauth=='1' noch mail_smtpname gesetzt (Zeile 67) – gedeckt durch testAuthDisabledWhenNeitherFlagNorUserSet.",
+    "Altmethoden fromCentralSystemConfig() und smtpUserIsMailboxAddress() sind vollständig aus MailTestRelayConfig.php entfernt (grep bestätigt 0 Treffer).",
+    "CentralSettings.php: nur noch IAppConfig-Dependency (Zeile 27), keine IConfig-Injection, keine mailTestRelay()-Methode – bestätigt via grep 'IConfig|mailTestRelay' = 0 Treffer.",
+    "MailTestService.php Ctor (Zeile 37-44): IConfig $systemConfig ersetzt CentralSettings; dispatchEmail() (Zeile 179) ruft fromNextcloudMailConfig($this->systemConfig) auf.",
+    "MailTestService::deriveFromAddress() (Zeile 232-242) baut MAIL FROM aus mail_from_address + mail_domain, Fallback 'no-reply@<domain-under-test>' – validiert durch testDeriveFromAddressUsesMailFromAddressAndMailDomain und testDeriveFromAddressFallsBackWhenSettingsMissing.",
+    "interpretMailerFailure() (Zeile 252-316) verweist auf 'Nextcloud → Verwaltung → Grundeinstellungen → E-Mail-Server' und nennt konkrete NC-Keys (mail_smtphost, mail_smtpport, mail_smtpsecure, mail_smtpname, mail_smtppassword, mail_from_address, mail_domain) statt souvera_central.stalwart_*-Keys.",
+    "SmtpMailTestRelay::send() Zeile 88: `if ($config->authRequired) { … AUTH LOGIN … }` – der AUTH-Block wird korrekt übersprungen, wenn keine Auth gefordert ist.",
+    "MailTestRelayConfigTest: 9 Cases (Full-Config, MissingHost, DefaultPort25, AuthAutoEnabledWhenSmtpNameSet, AuthDisabledWhenNeitherFlagNorUserSet, Port465AutoUpgradesToSsl, InvalidSecureFallsBackToNone, IntegerPort, InvalidPortFallsBackTo25) – alle IConfig-basiert, keine Central-Keys mehr.",
+    "MailTestServiceDiagnosticsTest: 11 Cases inkl. deriveFromAddress-Tests; alle NC-Key-Assertions (mail_smtphost, mail_smtpport, mail_smtpsecure, mail_smtpname, mail_smtppassword, mail_from_address, mail_domain, Grundeinstellungen, E-Mail-Server) explizit geprüft.",
+    "info.xml korrekt auf <version>3.3.9</version> gebumpt (Zeile 28).",
+    "Regressions-grep bestätigt Zero-Treffer für alle 7 verbotenen Identifier in lib/ und tests/unit/: stalwart_admin_user, stalwart_admin_password, stalwart_api_url, stalwart_mailtest, shield-mailtest, fromCentralSystemConfig, smtpUserIsMailboxAddress."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "N/A (backend only)"},
+  "test_credentials": "N/A (Unit-Tests mit IConfig-Mocks)",
+  "seed_data_creation": "Keine",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "v3.3.9 Backend-Bugfix (Zero-Config Mail-Test via NC's mail_* Keys) vollständig verifiziert (Iteration 17). PHPUnit 40/40 grün (+1 vs Iter 16 – testDeriveFromAddressFallsBackWhenSettingsMissing hinzugefügt). Reflection- und L10N-DI-Check bleiben grün. Alle Legacy-Stalwart-Referenzen (stalwart_admin_user etc.) sind aus lib/ und tests/unit/ entfernt. MailTestRelayConfig hat jetzt die neuen readonly-Felder authRequired + securityMode; SmtpMailTestRelay::send() überspringt AUTH-Block korrekt, wenn authRequired=false. Keine offenen Issues – die User-Beschwerde 'Mail-Test-Relay ungültig konfiguriert' ist durch den Wechsel zu Nextclouds mail_smtp*-Config strukturell obsolet.",
+  "results_detail": {
+    "phpunit": "OK (40 tests, 104 assertions) - exit 0",
+    "reflection_check": "REFLECTION_OK - exit 0",
+    "l10n_di_check": "L10N_DI_OK - exit 0",
+    "info_xml_version": "3.3.9",
+    "php_syntax_check": "No syntax errors in 6 changed files (MailTestRelayConfig.php, CentralSettings.php, MailTestService.php, SmtpMailTestRelay.php, MailTestRelayConfigTest.php, MailTestServiceDiagnosticsTest.php)",
+    "forbidden_refs_grep_lib_and_tests_unit": "0 hits for all 7 identifiers (stalwart_admin_user, stalwart_admin_password, stalwart_api_url, stalwart_mailtest, shield-mailtest, fromCentralSystemConfig, smtpUserIsMailboxAddress)",
+    "central_settings_has_iconfig_or_mailtestrelay": "0 matches - confirmed clean",
+    "smtp_relay_auth_guard": "Line 88: if ($config->authRequired) { ... } - confirmed",
+    "mailtest_service_uses_iconfig": "Line 40: private readonly IConfig $systemConfig; Line 179: MailTestRelayConfig::fromNextcloudMailConfig($this->systemConfig)",
+    "derive_from_address": "Line 232-242: mail_from_address + mail_domain with no-reply@<domain> fallback",
+    "port_465_auto_ssl": "MailTestRelayConfig.php Line 74-76 covered by testPort465AutoUpgradesToSslWhenSecureNotSet",
+    "auth_disabled_when_empty_user": "MailTestRelayConfig.php Line 67 covered by testAuthDisabledWhenNeitherFlagNorUserSet"
+  }
+}

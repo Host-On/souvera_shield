@@ -1,0 +1,56 @@
+{
+  "summary": "Backend-only Verifikation für Souvera Shield v2.4.1 (Nextcloud-PHP-App, kein FastAPI/React). Alle 12 Anforderungspunkte des review_request GRÜN. php -l über lib/+appinfo/: 0 Fehler. PHPUnit-Suite: 16 Tests / 33 Assertions PASSED (11 Regression + 5 neue MailTestServiceDiagnosticsTest). JS-Sanity: node --check über app.js und alle 4 l10n-*.js Dateien fehlerfrei. l10n JSONs (de, de_DE, nl, en_GB): alle wohlgeformt, je 166 translations (dict), pluralForm='nplurals=2; plural=(n != 1);'. de(du) vs de_DE(Sie): 16 Strings unterschiedlich, klare Marker (\"trage/tragen Sie\", \"deinem/Ihrem\", \"du kannst/Sie können\", \"markiere/markieren Sie\", \"steuere/steuern Sie\"). en_GB ist echte Identity-Map (166/166). Alte /app/l10n/en.* Dateien entfernt. Modal-Fix in app.js verifiziert (modalEl.hidden=true in close-modal + confirm-modal Handler, ESC-Handler mit escWired-Guard). Pagination komplett: REPORTS_PER_PAGE=10, TOP_SENDERS_PER_PAGE=5, REP_STATE.reportsPage/topSendersPage, API ?page=&limit=, renderClientPager mit data-pager='reports|topsenders' + '{from}–{to} of {total}' + 'Page {page} of {count}'. Delegate-Handler bei Zeile 1229 wechselt Seiten (reports→refreshReports API, topsenders→renderStats client-side). Regression: 0 Referenzen mehr auf MailTestSmtpConfig/SmtpBypass. dispatchEmail() ruft KEIN SMTP-Bypass mehr – try/send-Zweig und failed-array-Zweig gehen BEIDE durch interpretMailerFailure(). Interpretation deckt alle 5 Kategorien ab (auth-535 zuerst um 5.7.x-Fehl-Klassifikation zu vermeiden, sender rejected, relay/recipient inkl. 5.7.x+5.1.x-Regex, tls/connection, unbekannt-Fallback) und nennt exakt die Spec-Config-Keys.",
+  "checks_performed": {
+    "php_syntax_lib_appinfo": "PASS – find /app/lib /app/appinfo -name '*.php' -exec php -l → 0 Fehler",
+    "phpunit": "PASS – ./vendor/bin/phpunit -c tests/phpunit.xml → 16 tests, 33 assertions, 0 failures, 0 errors (PHPUnit 10.5.63 / PHP 8.2.32). Aufteilung: MailTestServiceDiagnosticsTest=5 (Relay/5.7.x/Auth/TLS/unknown), PMGClientTest=7, ProviderToolsClientTest=4. Alte 11 Regression-Tests weiter grün.",
+    "js_sanity": "PASS – node --check für /app/js/app.js + /app/l10n/{de,de_DE,nl,en_GB}.js alle fehlerfrei",
+    "l10n_json_sanity": "PASS – Alle 4 JSONs wohlgeformt, translations=dict mit je 166 keys, pluralForm='nplurals=2; plural=(n != 1);' vorhanden",
+    "l10n_du_vs_sie": "PASS – de(du) und de_DE(Sie) unterscheiden sich in genau 16 Strings; alle Diffs sind konsistente Du-/Sie-Umformulierungen (z. B. 'Trage … deinem' ↔ 'Tragen Sie … Ihrem', 'Du kannst' ↔ 'Sie können', 'markiere' ↔ 'markieren Sie', 'Steuere' ↔ 'Steuern Sie')",
+    "l10n_en_GB_identity": "PASS – 166/166 Einträge sind Identity-Map (key == translation)",
+    "l10n_old_en_removed": "PASS – /app/l10n/en.json und /app/l10n/en.js existieren nicht mehr; verbleiben nur de, de_DE, nl, en_GB (json+js)",
+    "info_xml_version": "PASS – /app/appinfo/info.xml Zeile 28: <version>2.4.1</version>",
+    "main_php_version_footer": "PASS – /app/templates/main.php Zeile 371: <span class='shield-footer__version' data-testid='shield-version'>v2.4.1</span>",
+    "main_php_pager_slot": "PASS – /app/templates/main.php Zeile 307: <div data-role='dmarc-reports-pager' data-testid='shield-reports-pager'></div>",
+    "css_shield_pager": "PASS – /app/css/style.css Zeilen 883–915: .shield-pager, .shield-pager__btn (32×32), .shield-pager__label (tabular-nums), .shield-pager__btn[disabled] mit opacity:.35",
+    "js_pagination_wiring": "PASS – app.js:700 REPORTS_PER_PAGE=10, app.js:701 TOP_SENDERS_PER_PAGE=5, app.js:696–697 REP_STATE.reportsPage/topSendersPage, app.js:791 refreshReports ruft '/api/dmarc/domain/reports?page=<n>&limit=10', app.js:989–1006 renderClientPager rendert data-pager='reports|topsenders' mit '{from}–{to} of {total}' + 'Page {page} of {count}', app.js:1229–1242 Delegate-Handler wechselt Seite (reports→refreshReports/API, topsenders→renderStats/client slice)",
+    "js_modal_fix": "PASS – app.js:237–242 close-modal Handler dispatched CustomEvent shield:modal-close UND setzt modalEl.hidden=true; app.js:244–249 confirm-modal Handler dispatched CustomEvent shield:modal-confirm UND setzt modalEl.hidden=true. ESC-Taste app.js:154–163 mit escWired-Guard, verhindert Duplicate-Listener, ruft closeModal + CustomEvent.",
+    "mail_test_service_no_bypass": "PASS – /app/lib/Service/MailTestService.php:167–195 dispatchEmail(): nutzt \\OCP\\Mail\\IMailer::send(); try/catch fängt Throwable → interpretMailerFailure(e.getMessage(), testEmail); Non-empty failed-Array → interpretMailerFailure('Recipient rejected by SMTP relay: …'). BEIDE Pfade werfen \\RuntimeException mit der Diagnose-Message. Kein SMTP-Bypass, kein alternativer Relay-Pfad, kein Fallback-SMTP.",
+    "mail_test_service_interpret_categories": "PASS – interpretMailerFailure() (Zeilen 211–268) klassifiziert präzise 5 Kategorien: (a) auth/535 zuerst (Zeile 218–225) → nennt 'mail_smtpauthtype / mail_smtpname / mail_smtppassword', (b) sender rejected (Zeile 228–236) → nennt 'SPF-, DKIM- und ggf. HELO-/Envelope-Sender', (c) relay/recipient inkl. 5.7.x + 5.1.x Regex (Zeile 239–253) → nennt 'Relay-Policy', 'mail_smtpmode/mail_smtphost', 'mynetworks / smtpd_recipient_restrictions', 'PMG Relaying', (d) tls/connection (Zeile 256–265) → nennt 'mail_smtphost / mail_smtpport / mail_smtpsecure', (e) unbekannt-Fallback (Zeile 267) → generischer Prefix + raw. Reihenfolge korrekt: 535 wird VOR 5.7.x geprüft.",
+    "regression_grep_no_smtp_bypass": "PASS – grep -rn 'MailTestSmtpConfig|SmtpBypass|smtp_bypass|bypassRelay|BypassSmtp' /app/lib /app/js /app/templates /app/appinfo → 0 Treffer",
+    "stubs_php_extended": "PASS – /app/tests/stubs.php enthält QBMapper (Zeile 50), Entity (Zeile 59), DoesNotExistException (Zeile 64), IMessage-Interface (Zeile 70), IMailer-Interface (Zeile 78) mit createMessage(): IMessage und send(IMessage): array"
+  },
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/unit/Service/MailTestServiceDiagnosticsTest.php",
+    "/app/tests/unit/Service/PMGClientTest.php",
+    "/app/tests/unit/Service/ProviderToolsClientTest.php",
+    "/app/test_reports/pytest/phpunit_iter5.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "MailTestService::interpretMailerFailure() ordnet die Klassifikations-Bedingungen bewusst so an, dass 'authentication failed / 535' VOR den 5.7.x-Recipient-Patterns geprüft wird. Das ist genau richtig, weil Postfix bei Auth-Fehlern gerne '535 5.7.8 Error: authentication failed' liefert und sonst fälschlich als 'Relay-Policy' interpretiert würde. Kommentar in Zeile 217 dokumentiert das ausdrücklich – sauber.",
+    "dispatchEmail() vereint die beiden Fehlerpfade (Exception aus mailer->send + non-empty failed-array) einheitlich über interpretMailerFailure(); das garantiert konsistente UX-Meldungen egal auf welchem Pfad SMTP scheitert. Test testFivePointSevenPatternIsRecognised deckt den failed-array-Pfad ab.",
+    "app.js Modal-Fix: Statt nur den CustomEvent zu dispatchen (der bei withFooter=false keinen Listener hat), wird modalEl.hidden=true jetzt UNCONDITIONAL im Handler gesetzt. Kombiniert mit dem ESC-Handler (escWired-Guard verhindert Listener-Duplikate) ist der 'Mail test details'-Modal-Close-Bug wasserdicht behoben. Info-Modals ohne Footer (openModal ohne withFooter) sind über den X-Button + ESC + Backdrop-Click schließbar.",
+    "renderClientPager() rendert bei pageCount<=1 leer – gut, kein optischer Pager-Rest bei ≤10 Reports bzw. ≤5 Top-Sendern. Der Range-Label-String ist i18n-fähig ('{from}–{to} of {total}' + 'Page {page} of {count}') und in allen 4 l10n-Dateien präsent.",
+    "l10n en_GB.json ist echte Identity-Map (166/166) – gute Basis für zukünftige englische Varianten. de_DE bleibt semantisch konsistent (unterscheidet sich nur an 16 Ansprache-Strings), keine versehentliche Doppel-Übersetzung. pluralForm ist bei allen 4 Sprachen 'nplurals=2; plural=(n != 1);' – korrekt für DE/NL/EN."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "n/a (übersprungen laut Auftrag – testing_type='backend only(skip frontend)')"
+  },
+  "test_credentials": "n/a – keine Auth/HTTP-Tests erforderlich; ausschließlich statische Prüfung + PHPUnit + JSON/JS-Sanity.",
+  "seed_data_creation": "keine",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Nextcloud-PHP-App souvera_shield v2.4.1 – KEIN FastAPI/React, KEINE HTTP-Backend-URL. Testflow: (1) find lib appinfo -name '*.php' -exec php -l, (2) cd /app && ./vendor/bin/phpunit -c tests/phpunit.xml (aktuell 16/33 grün), (3) node --check für js/app.js + l10n/*.js, (4) JSON-Sanity in Python: json.load + assert translations=dict + pluralForm-present + count==166. Regressions-Grep-Set für nächste Iterationen: 'MailTestSmtpConfig|SmtpBypass|smtp_bypass|bypassRelay' (muss 0 sein), 'SetProviderToolsTokenCommand' (muss 0 im Code sein), 'dmarc-recheck|renderRecordBadge|handleDmarcRecheck' (muss 0 sein). Wichtige Interpretations-Reihenfolge in MailTestService::interpretMailerFailure(): 535/auth ZUERST, dann 5.7.x/5.1.x-Regex – NICHT ohne Grund umsortieren.",
+  "rca of the issue": "n/a – keine Bugs. Alle 4 gemeldeten Bugs sind laut Code-Inspektion + PHPUnit + statischer Sanity behoben: (1) SMTP-Diagnostik statt Bypass verifiziert, (2) Pagination komplett verdrahtet, (3) 4 Sprachdateien mit korrekten Du-/Sie-Formen und Identity-Map en_GB, (4) Modal schließt jetzt via X/OK/ESC/Backdrop."
+}

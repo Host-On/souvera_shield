@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Souvera Shield – Preview</title>
+<style>
+    /* ---------------- Nextcloud 32-34 design tokens (subset) ---------------- */
+    :root[data-theme="light"] {
+        --color-main-background: #ffffff;
+        --color-main-text: #1a1a1a;
+        --color-background-hover: #f5f5f5;
+        --color-background-dark: #ededed;
+        --color-border: #dcdcdc;
+        --color-border-dark: #b4b4b4;
+        --color-text-maxcontrast: #6b6b6b;
+        --color-primary-element: #0082c9;
+        --color-primary-element-hover: #006aa3;
+        --color-primary-element-text: #ffffff;
+        --color-primary-element-light: #d8efff;
+        --color-primary-element-light-text: #00496e;
+        --color-error: #e9322d;
+        --color-error-rgb: 233,50,45;
+        --border-radius: 8px;
+        --border-radius-large: 12px;
+        --color-page-bg: #f5f5f5;
+        --color-header: #ffffff;
+    }
+    :root[data-theme="dark"] {
+        --color-main-background: #1e1e1e;
+        --color-main-text: #f5f5f5;
+        --color-background-hover: #2a2a2a;
+        --color-background-dark: #303030;
+        --color-border: #383838;
+        --color-border-dark: #4a4a4a;
+        --color-text-maxcontrast: #aaaaaa;
+        --color-primary-element: #2589d7;
+        --color-primary-element-hover: #3aa1ef;
+        --color-primary-element-text: #ffffff;
+        --color-primary-element-light: #0b3a5a;
+        --color-primary-element-light-text: #c8e6ff;
+        --color-error: #ff6b6b;
+        --color-error-rgb: 255,107,107;
+        --border-radius: 8px;
+        --border-radius-large: 12px;
+        --color-page-bg: #161616;
+        --color-header: #1a1a1a;
+    }
+
+    html, body { margin: 0; padding: 0; height: 100%; background: var(--color-page-bg); color: var(--color-main-text);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+
+    /* Nextcloud header */
+    .nc-header {
+        height: 50px;
+        background: var(--color-primary-element);
+        color: var(--color-primary-element-text);
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        gap: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    .nc-header__logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; }
+    .nc-header__logo-icon {
+        width: 28px; height: 28px; border-radius: 6px;
+        background: rgba(255,255,255,.18);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px;
+    }
+    .nc-header__apps {
+        display: flex; gap: 4px; margin-left: 16px; flex: 1;
+    }
+    .nc-header__apps a {
+        color: var(--color-primary-element-text); opacity: .8;
+        width: 36px; height: 36px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        text-decoration: none; font-size: 14px;
+        transition: background .15s;
+    }
+    .nc-header__apps a:hover { background: rgba(255,255,255,.15); opacity: 1; }
+    .nc-header__apps a.is-active { background: rgba(255,255,255,.25); opacity: 1; }
+    .nc-header__user {
+        width: 36px; height: 36px; border-radius: 50%;
+        background: rgba(255,255,255,.22);
+        display: flex; align-items: center; justify-content: center; font-weight: 700;
+    }
+
+    /* Layout */
+    .nc-body { display: flex; min-height: calc(100vh - 50px); }
+    #app-navigation {
+        width: 260px;
+        background: var(--color-main-background);
+        border-right: 1px solid var(--color-border);
+        padding: 16px 8px;
+        flex-shrink: 0;
+    }
+    #app-content {
+        flex: 1;
+        background: var(--color-page-bg);
+        min-width: 0;
+    }
+
+    /* --- include app styles inline (copied from /app/css/style.css) --- */
+    #app-navigation .app-navigation__list { list-style:none; padding:0; margin:0; }
+    #app-navigation .app-navigation-entry { border-radius: var(--border-radius-large); margin: 2px 4px; }
+    #app-navigation .app-navigation-entry-link {
+        display:flex; align-items:center; gap:10px; padding:10px 14px;
+        border-radius: var(--border-radius-large);
+        color: var(--color-main-text); text-decoration:none; font-weight:500;
+        min-height:44px; line-height:1.2;
+    }
+    #app-navigation .app-navigation-entry-link:hover { background-color: var(--color-background-hover); }
+    #app-navigation .app-navigation-entry.active > .app-navigation-entry-link {
+        background-color: var(--color-primary-element-light);
+        color: var(--color-primary-element-light-text);
+        font-weight:600;
+    }
+    .app-navigation-entry-icon {
+        width:22px; height:22px; flex-shrink:0; opacity:.8;
+        display:flex; align-items:center; justify-content:center;
+    }
+    .app-navigation-entry.active .app-navigation-entry-icon { opacity:1; }
+    .app-navigation-entry-icon svg { width:20px; height:20px; }
+
+    .shield-wrapper {
+        padding: clamp(16px,3vw,36px);
+        max-width:1200px; margin:0 auto;
+        display:flex; flex-direction:column; gap:28px;
+        color: var(--color-main-text);
+    }
+    .shield-section {
+        background: var(--color-main-background);
+        border:1px solid var(--color-border);
+        border-radius: var(--border-radius-large);
+        padding:24px; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .shield-section__header { display:flex; flex-direction:column; gap:4px; margin-bottom:16px; }
+    .shield-section__header--with-action { flex-direction:row; align-items:flex-start; justify-content:space-between; gap:16px; }
+    .shield-section__header h2 { margin:0; font-size:1.15rem; font-weight:700; color: var(--color-main-text); }
+    .shield-section__header h3 { margin:0; font-size:1.05rem; font-weight:700; color: var(--color-main-text); }
+    .shield-section__sub { margin:0; color: var(--color-text-maxcontrast); font-size:.92rem; line-height:1.5; }
+
+    .shield-stats { display:grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
+    .shield-stat {
+        border:1px solid var(--color-border);
+        border-radius: var(--border-radius-large);
+        padding:14px 16px; background: var(--color-background-hover);
+        display:flex; flex-direction:column; gap:6px; min-height:78px;
+    }
+    .shield-stat__label { color: var(--color-text-maxcontrast); font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }
+    .shield-stat__value { font-size:1.7rem; font-weight:700; }
+
+    .shield-table-wrap { overflow-x:auto; border-radius: var(--border-radius); }
+    .shield-table { width:100%; border-collapse:collapse; font-size:.94rem; color:var(--color-main-text); }
+    .shield-table th, .shield-table td { padding:12px 14px; text-align:left; vertical-align:top; border-bottom:1px solid var(--color-border); word-break:break-word; }
+    .shield-table thead th { background: var(--color-background-hover); color: var(--color-text-maxcontrast); font-weight:600; font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; }
+    .shield-table tbody tr:hover { background: var(--color-background-hover); }
+    .shield-table tbody tr:last-child td { border-bottom:0; }
+    .shield-table__col-action { width:1%; white-space:nowrap; }
+
+    .shield-action {
+        background:transparent; border:0; cursor:pointer;
+        color: var(--color-primary-element);
+        font-weight:600; padding:4px 8px; border-radius: var(--border-radius);
+        margin-right:4px; font-size:.88rem;
+    }
+    .shield-action:hover { background: var(--color-primary-element-light); }
+    .shield-action--danger { color: var(--color-error); }
+
+    .button {
+        display:inline-flex; align-items:center; justify-content:center;
+        padding:8px 16px; border-radius: var(--border-radius);
+        border:1px solid var(--color-border-dark); background:var(--color-main-background);
+        color: var(--color-main-text); font-weight:600; cursor:pointer; font-size:.92rem;
+    }
+    .button.primary { background: var(--color-primary-element); border-color: var(--color-primary-element); color: var(--color-primary-element-text); }
+    .button.primary:hover { background: var(--color-primary-element-hover); }
+
+    .shield-form { display:flex; flex-direction:column; gap:14px; }
+    .shield-checkbox { display:inline-flex; align-items:center; gap:10px; cursor:pointer; }
+    .shield-checkbox input { width:18px; height:18px; accent-color: var(--color-primary-element); }
+
+    .shield-pagination { display:flex; gap:4px; justify-content:flex-end; margin-top:16px; }
+    .shield-pagination button { min-width:36px; height:36px; border-radius: var(--border-radius); border:1px solid var(--color-border); background:var(--color-main-background); color:var(--color-main-text); cursor:pointer; font-weight:500; }
+    .shield-pagination button.is-active { background:var(--color-primary-element); border-color:var(--color-primary-element); color: var(--color-primary-element-text); }
+
+    /* Preview switcher pill */
+    .preview-switch {
+        position: fixed; right: 20px; bottom: 20px; z-index: 200;
+        background: var(--color-main-background);
+        border: 1px solid var(--color-border);
+        border-radius: 999px; padding: 4px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.18);
+        display: flex; gap: 2px;
+    }
+    .preview-switch button {
+        border:0; background:transparent; color: var(--color-main-text);
+        padding: 8px 14px; border-radius: 999px; cursor:pointer; font-weight: 600; font-size: .85rem;
+    }
+    .preview-switch button.is-active { background: var(--color-primary-element); color: var(--color-primary-element-text); }
+</style>
+</head>
+<body>
+
+<header class="nc-header">
+    <div class="nc-header__logo">
+        <div class="nc-header__logo-icon">☁</div>
+        <span>Nextcloud</span>
+    </div>
+    <nav class="nc-header__apps">
+        <a title="Files">📁</a>
+        <a title="Mail">✉️</a>
+        <a class="is-active" title="Shield">🛡️</a>
+        <a title="Calendar">📅</a>
+        <a title="Talk">💬</a>
+    </nav>
+    <div class="nc-header__user">JD</div>
+</header>
+
+<div class="nc-body">
+    <nav id="app-navigation" role="navigation" aria-label="Souvera Shield Navigation">
+        <ul class="app-navigation__list">
+            <li class="app-navigation-entry active">
+                <a class="app-navigation-entry-link" href="#">
+                    <span class="app-navigation-entry-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l3-3 4 4 8-8"/><path d="M3 19h18"/></svg>
+                    </span>
+                    <span class="app-navigation-entry__title">Übersicht</span>
+                </a>
+            </li>
+            <li class="app-navigation-entry">
+                <a class="app-navigation-entry-link" href="#">
+                    <span class="app-navigation-entry-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+                    </span>
+                    <span class="app-navigation-entry__title">Spam-Quarantäne</span>
+                </a>
+            </li>
+            <li class="app-navigation-entry">
+                <a class="app-navigation-entry-link" href="#">
+                    <span class="app-navigation-entry-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                    </span>
+                    <span class="app-navigation-entry__title">Datei-Quarantäne</span>
+                </a>
+            </li>
+            <li class="app-navigation-entry">
+                <a class="app-navigation-entry-link" href="#">
+                    <span class="app-navigation-entry-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+                    </span>
+                    <span class="app-navigation-entry__title">Virus-Quarantäne</span>
+                </a>
+            </li>
+            <li class="app-navigation-entry">
+                <a class="app-navigation-entry-link" href="#">
+                    <span class="app-navigation-entry-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    </span>
+                    <span class="app-navigation-entry__title">Whitelist</span>
+                </a>
+            </li>
+            <li class="app-navigation-entry">
+                <a class="app-navigation-entry-link" href="#">
+                    <span class="app-navigation-entry-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+                    </span>
+                    <span class="app-navigation-entry__title">Blacklist</span>
+                </a>
+            </li>
+            <li class="app-navigation-entry">
+                <a class="app-navigation-entry-link" href="#">
+                    <span class="app-navigation-entry-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+                    </span>
+                    <span class="app-navigation-entry__title">Einstellungen</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main id="app-content">
+        <div class="shield-wrapper">
+
+            <section class="shield-section">
+                <header class="shield-section__header">
+                    <h2>Übersicht</h2>
+                    <p class="shield-section__sub">Status deines eingehenden Mail-Schutzes. Verwalte Quarantäne und persönliche Filterregeln über das Menü links.</p>
+                </header>
+                <div class="shield-stats">
+                    <div class="shield-stat"><span class="shield-stat__label">E-Mails in Quarantäne</span><strong class="shield-stat__value">47</strong></div>
+                    <div class="shield-stat"><span class="shield-stat__label">Whitelist-Einträge</span><strong class="shield-stat__value">12</strong></div>
+                    <div class="shield-stat"><span class="shield-stat__label">Blacklist-Einträge</span><strong class="shield-stat__value">8</strong></div>
+                    <div class="shield-stat"><span class="shield-stat__label">Anhänge in Quarantäne</span><strong class="shield-stat__value">3</strong></div>
+                    <div class="shield-stat"><span class="shield-stat__label">Viren in Quarantäne</span><strong class="shield-stat__value">1</strong></div>
+                </div>
+            </section>
+
+            <section class="shield-section">
+                <header class="shield-section__header">
+                    <h3>Neueste Quarantäne-Nachrichten</h3>
+                    <p class="shield-section__sub">Die zuletzt in Quarantäne verschobenen E-Mails der vergangenen 24 Stunden.</p>
+                </header>
+                <div class="shield-table-wrap">
+                    <table class="shield-table">
+                        <thead><tr><th>Empfangen</th><th>Absender</th><th>Betreff</th><th class="shield-table__col-action">Aktion</th></tr></thead>
+                        <tbody>
+                            <tr><td>22.01.2026, 14:12</td><td>news@deals-deals.io</td><td>Du hast 1.000 € gewonnen!</td>
+                                <td class="shield-table__col-action">
+                                    <button class="shield-action">Vorschau</button>
+                                    <button class="shield-action">Freigeben</button>
+                                    <button class="shield-action shield-action--danger">Löschen</button>
+                                </td></tr>
+                            <tr><td>22.01.2026, 13:55</td><td>support@phish-bank.test</td><td>Verifizieren Sie Ihr Konto</td>
+                                <td class="shield-table__col-action">
+                                    <button class="shield-action">Vorschau</button>
+                                    <button class="shield-action">Freigeben</button>
+                                    <button class="shield-action shield-action--danger">Löschen</button>
+                                </td></tr>
+                            <tr><td>22.01.2026, 11:03</td><td>noreply@newsletter.example</td><td>Wöchentliches Update</td>
+                                <td class="shield-table__col-action">
+                                    <button class="shield-action">Vorschau</button>
+                                    <button class="shield-action">Freigeben</button>
+                                    <button class="shield-action shield-action--danger">Löschen</button>
+                                </td></tr>
+                            <tr><td>22.01.2026, 09:41</td><td>marketing@unbekannt.co</td><td>Sonderangebot ⭐ jetzt zugreifen</td>
+                                <td class="shield-table__col-action">
+                                    <button class="shield-action">Vorschau</button>
+                                    <button class="shield-action">Freigeben</button>
+                                    <button class="shield-action shield-action--danger">Löschen</button>
+                                </td></tr>
+                            <tr><td>22.01.2026, 08:12</td><td>info@unsicher.example</td><td>Rechnung 2026-001 anbei</td>
+                                <td class="shield-table__col-action">
+                                    <button class="shield-action">Vorschau</button>
+                                    <button class="shield-action">Freigeben</button>
+                                    <button class="shield-action shield-action--danger">Löschen</button>
+                                </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <nav class="shield-pagination" aria-label="Seitennavigation">
+                    <button disabled>‹</button>
+                    <button class="is-active">1</button>
+                    <button>2</button>
+                    <button>3</button>
+                    <button>›</button>
+                </nav>
+            </section>
+
+        </div>
+    </main>
+</div>
+
+<div class="preview-switch">
+    <button id="btn-light" class="is-active">☀ Light</button>
+    <button id="btn-dark">🌙 Dark</button>
+</div>
+
+<script>
+    const root = document.documentElement;
+    document.getElementById('btn-light').onclick = () => { root.dataset.theme = 'light'; toggle('light'); };
+    document.getElementById('btn-dark').onclick  = () => { root.dataset.theme = 'dark';  toggle('dark');  };
+    function toggle(mode){
+        document.getElementById('btn-light').classList.toggle('is-active', mode==='light');
+        document.getElementById('btn-dark').classList.toggle('is-active', mode==='dark');
+    }
+</script>
+
+</body>
+</html>

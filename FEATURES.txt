@@ -1,0 +1,193 @@
+================================================================================
+ SOUVERA SHIELD  –  Funktionsübersicht (v2.4.0)
+ Nextcloud-App für Proxmox Mail Gateway + DMARC Analyzer (provider.tools)
+================================================================================
+
+Zugriff wird pro Nextcloud-Instanz über zwei Gruppen gesteuert:
+
+  • souvera-users   →  alle Endanwender-Funktionen (Quarantäne, Listen …)
+  • souvera-admins  →  zusätzlich: Reputation Management (DMARC + Mail-Test)
+
+Server-Administratoren (Nextcloud „admin") sehen darüber hinaus die
+Konfigurationsseite und das globale Audit-Log.
+
+
+================================================================================
+ A)  ENDANWENDER-FUNKTIONEN   (Gruppe: souvera-users)
+================================================================================
+
+1. Übersicht (Dashboard-Startseite der App)
+   -  Kompakter Statusbereich mit fünf Zählern:
+      • E-Mails in Quarantäne
+      • Whitelist-Einträge
+      • Blacklist-Einträge
+      • Anhänge in Quarantäne     (falls Admin aktiviert)
+      • Viren in Quarantäne       (falls Admin aktiviert)
+   -  Liste der zuletzt in Quarantäne verschobenen E-Mails der letzten
+      24 Stunden mit den Aktionen „Vorschau", „Freigeben", „Löschen".
+
+2. Spam-Quarantäne
+   -  Anzeige aller aktuell für den Nutzer zurückgehaltenen Spam-Mails.
+   -  Volltextsuche (Absender / Betreff / Datum) direkt in der Liste.
+   -  Pro Nachricht: Vorschau (inkl. Kopfzeilen), Freigeben, Löschen.
+   -  Mehrfachauswahl mit Bulk-Aktionen „Ausgewählte freigeben" /
+      „Ausgewählte löschen".
+   -  Export der aktuellen Ansicht als CSV.
+   -  Seitenweise Anzeige (Pagination) bei größerer Listenlänge.
+
+3. Datei-Quarantäne  (nur wenn vom Admin aktiviert)
+   -  Vom Content-Filter zurückgehaltene Anhänge einsehen.
+   -  Einzeln oder als Mehrfachauswahl freigeben bzw. löschen.
+   -  Export als CSV.
+
+4. Virus-Quarantäne  (nur wenn vom Admin aktiviert)
+   -  Vom Virenscanner blockierte E-Mails einsehen.
+   -  Einzeln oder als Mehrfachauswahl freigeben bzw. löschen.
+   -  Export als CSV.
+
+5. Persönliche Whitelist  (immer erlauben)
+   -  Eigene Liste vertrauenswürdiger Absender-Adressen oder ganzer
+      Domänen pflegen (hinzufügen, entfernen).
+   -  Volltextsuche in der Liste.
+   -  Export als CSV.
+
+6. Persönliche Blacklist  (immer blockieren)
+   -  Eigene Liste zu blockierender Absender-Adressen oder Domänen
+      pflegen (hinzufügen, entfernen).
+   -  Volltextsuche in der Liste.
+   -  Export als CSV.
+
+7. Nextcloud-Integration (aus jedem Bereich der Nextcloud heraus nutzbar)
+   -  Dashboard-Widget „Souvera Shield" auf der Nextcloud-Startseite –
+      zeigt die neuesten Quarantäne-Nachrichten mit direkten Links.
+   -  Unified Search: Nachrichten aus der Quarantäne über die
+      globale Suche (Strg + K / Nextcloud-Suchpalette) finden.
+   -  Bell-Benachrichtigungen (Glocken-Symbol oben rechts) –
+      ein Hintergrund-Job informiert, sobald neue Nachrichten
+      in Quarantäne landen.
+   -  Optionaler tägl. Zusammenfassungs-Hinweis
+      (zentral in Souvera Central schaltbar).
+
+8. Theming & Barrierefreiheit
+   -  Vollständige Übernahme des Nextcloud-Themes: Light-, Dark- und
+      High-Contrast-Modus, benutzerdefinierte Primärfarbe.
+   -  Aktions-Buttons als Icon-Buttons mit Tooltip + Screenreader-Label.
+   -  Zweisprachig: Deutsch und Englisch.
+   -  Responsive: auf schmalen Displays klappen Tabellen zu Karten um.
+
+
+================================================================================
+ B)  ADMIN-FUNKTIONEN
+================================================================================
+
+Zwei Ebenen von Administrator-Berechtigungen:
+
+  •  „Souvera-Admin"  (Mitglied der Gruppe souvera-admins)
+     →  Zugriff auf das Reputation Management (DMARC Analyzer + Mail-Test)
+
+  •  Nextcloud-Admin  (Server-Administrator)
+     →  Zugriff auf die App-Einstellungen und das globale Audit-Log
+
+
+B.1  REPUTATION MANAGEMENT   (Gruppe: souvera-admins)
+------------------------------------------------------
+
+Voll-integrierter DMARC-Analyzer für die Workspace-Domäne –
+Datenquelle: provider.tools (API-Token wird zentral in
+„Souvera Central" hinterlegt und apps-übergreifend genutzt).
+
+1. Domain-Setup-Assistent
+   -  Erkennt automatisch die Workspace-Domäne (aus Proxmox
+      Mail Gateway) und zeigt an, ob sie bereits registriert und
+      verifiziert ist.
+   -  Ein-Klick-Registrierung bei provider.tools.
+   -  DNS-Einrichtungshinweise werden direkt in der Oberfläche
+      angezeigt (Verifizierungs-TXT sowie DMARC-Record mit
+      rua-Zieladresse) – jeweils mit Kopier-Button.
+   -  „Verifizierung prüfen": startet den DNS-Abgleich bei
+      provider.tools und aktualisiert den Status.
+
+2. Statistik-Bereich
+   -  Auswählbarer Zeitraum: 7 / 30 / 90 Tage.
+   -  Vier Kennzahl-Kacheln:
+      • Nachrichten insgesamt
+      • Empfangene Aggregate-Reports
+      • DKIM-Pass-Rate     (Ampel-Farben ab ≥95 % grün / ≥80 % gelb)
+      • SPF-Pass-Rate      (dito)
+   -  Top-Absender-Übersicht (Organisation, Volumen, DKIM/SPF).
+
+3. Aggregate Reports (DMARC RUA)
+   -  Paginierte Liste der von den Empfängerprovidern gemeldeten
+      Aggregate-Reports.
+   -  Pro Report: meldende Organisation, Zeitraum, Nachrichten,
+      DKIM-Ergebnis in %, SPF-Ergebnis in %, angewendete Policy.
+
+4. Mail-Test (Reputationsprüfung des Postausgangs)
+   -  Automatischer Wochen-Test (jeden Sonntag) über
+      provider.tools; Ergebnisse landen in der Historie.
+   -  Button „Mail-Test jetzt ausführen": schickt sofort eine
+      Test-Mail vom Absender „postmaster@<domain>" an
+      provider.tools und wartet auf die Auswertung.
+   -  Historie mit Score (0–10), SPF-, DKIM- und
+      DMARC-Ergebnis, Trigger („manuell" / „wöchentlich")
+      und Aktionen „Aktualisieren" / „Details".
+   -  Fehlgeschlagene Tests werden nicht in der Historie
+      abgelegt – der Fehler erscheint direkt als Toast.
+
+
+B.2  APP-EINSTELLUNGEN   (Nextcloud-Serveradministrator)
+--------------------------------------------------------
+
+Menüpunkt „Einstellungen" innerhalb der App:
+
+   -  „Datei-Quarantäne aktivieren"   (Ein/Aus)
+      → Blendet den Menüpunkt für Endanwender ein oder aus.
+   -  „Virus-Quarantäne aktivieren"   (Ein/Aus)
+      → Blendet den Menüpunkt für Endanwender ein oder aus.
+
+(Weitere globale Optionen wie „Desktop-Benachrichtigungen",
+„Tages-Zusammenfassung" und „Minimaler Spam-Score" liegen
+zentral in Souvera Central und werden von Shield gelesen.)
+
+
+B.3  AUDIT-LOG   (Nextcloud-Serveradministrator)
+------------------------------------------------
+
+   -  Chronologische Aufzeichnung aller verändernden Aktionen:
+      • Freigabe / Löschung einer Quarantäne-Nachricht
+      • Hinzufügen / Entfernen von Whitelist- und Blacklist-Einträgen
+   -  Spalten: Zeitstempel, Benutzer, Aktion, Zielobjekt.
+   -  Paginierte Anzeige, für Compliance-Zwecke exportierbar.
+
+
+================================================================================
+ C)  BETRIEB UND SICHERHEIT   (unsichtbar im Hintergrund)
+================================================================================
+
+Nicht sichtbar im UI, aber Teil des Funktionsumfangs:
+
+   -  Hintergrundjobs:
+      • Poll-Quarantine   → prüft periodisch neue Nachrichten
+                            und erzeugt Nutzer-Benachrichtigungen.
+      • Weekly-Mail-Test  → einmal pro Woche automatischer
+                            Reputationstest via provider.tools.
+      • Poll-Pending-Mail-Tests → holt fehlende Test-Ergebnisse
+                            nach, damit die Historie vollständig bleibt.
+
+   -  Sicherheit:
+      • Middleware erzwingt Gruppenmitgliedschaft auf jedem
+        HTTP-Endpunkt (defense in depth).
+      • Reputation-Endpunkte zusätzlich nur für „souvera-admins".
+      • PMG-Zugangsdaten werden verschlüsselt in der DB abgelegt
+        (Nextcloud ICrypto, gebunden an das Instanz-Secret).
+      • provider.tools-Token wird ausschließlich in Souvera
+        Central verwaltet und niemals lokal gespeichert.
+
+   -  Kompatibilität:
+      • Nextcloud 32 / 33 / 34
+      • PHP ≥ 8.1
+      • Reines Vanilla-JS-Frontend, keine Build-Pipeline nötig.
+
+================================================================================
+ Ende der Funktionsübersicht.
+================================================================================

@@ -1,0 +1,45 @@
+{
+  "summary": "Souvera Shield v3.1.1 CSP-Nonce/Inline-Script Bugfix statisch verifiziert: PHP-Lint sauber (36 Dateien, 0 Fehler), PHPUnit 17/17 grün mit 38 Assertions, Template ohne Inline-<script> und ohne Nonce-Manager-Aufrufe, PageController ohne IInitialState, main.js liest data-* Attribute, router.js Sub-Path-safe, webpack publicPath: 'auto', Versionen 3.1.1 in package.json + info.xml, Build-Artefakt /app/js/souvera_shield-main.js vorhanden (561 KB), l10n 171 Keys × 4 Locales unverändert.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "lib/Dashboard/QuarantineWidget.php", "issue": "Ungenutzte IInitialState-Injection im Constructor (Zeile 9 + 29). Wird nirgends im Widget aufgerufen. Kein funktionaler Bug (Dashboard-Widget ist unabhängig vom SPA-Bootstrap und provideInitialState() wird nicht aufgerufen), aber toter DI-Import. Nutzer-Regressions-Grep 'grep IInitialState /app/lib /app/templates /app/src' liefert wegen dieses Files 2 Treffer statt der erwarteten 0."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verification_checklist": {
+    "php_lint_lib_appinfo": "PASS – 36 PHP-Dateien, 0 Syntaxfehler (PHP 8.2.32)",
+    "phpunit": "PASS – 17 Tests / 38 Assertions grün (tests/phpunit.xml)",
+    "template_no_inline_script": "PASS – templates/main.php enthält keinerlei Inline-<script>, kein nonce-Attribut, kein getNonce/getContentSecurityPolicyNonceManager (Treffer nur in PHPDoc-Kommentaren)",
+    "template_data_attributes": "PASS – alle 6 data-* Attribute (data-app-version, data-initial-page, data-is-admin, data-is-souvera-admin, data-allow-file-quarantine, data-allow-virus-quarantine) am #souvera-shield-app vorhanden",
+    "page_controller_constructor": "PASS – Constructor nimmt (IRequest, IUserSession, IGroupManager, IAppConfig), KEIN IInitialState-Parameter, KEIN provideInitialState()-Aufruf; renderPage() übergibt alle 6 Flags als Template-Vars",
+    "src_main_js": "PASS – liest window.OCA.SouveraShield.flags aus mountEl.dataset, setzt window.OCA.SouveraShield vor createApp(App).mount('#souvera-shield-app'); kein __webpack_public_path__, kein atob(), keine initial-state-Elemente",
+    "webpack_publicPath_auto": "PASS – webpack.config.js Zeile 20: publicPath: 'auto'",
+    "router_js": "PASS – navigate() nutzt generateUrl('/apps/souvera_shield' + ...); deriveFromLocation() nutzt lastIndexOf('/apps/souvera_shield'); state.current default = window.OCA?.SouveraShield?.initialPage",
+    "version_3_1_1": "PASS – package.json v3.1.1, appinfo/info.xml <version>3.1.1</version>",
+    "build_artifact": "PASS – /app/js/souvera_shield-main.js existiert (561128 bytes) plus 26 Chunk-Bundles",
+    "l10n_unchanged": "PASS – de.json, de_DE.json, en_GB.json, nl.json je 171 Keys",
+    "regression_grep": "PARTIAL – 'getNonce|getContentSecurityPolicyNonceManager|inline-state-souvera_shield' → 0 Treffer wie erwartet. 'IInitialState' liefert jedoch 2 Treffer in lib/Dashboard/QuarantineWidget.php (unrelated widget, ungenutzt – siehe minor issue)"
+  },
+  "test_report_links": ["/app/tests/phpunit.xml", "/app/tests/unit"],
+  "action_items": [
+    "OPTIONAL/KEIN BLOCKER: In lib/Dashboard/QuarantineWidget.php den ungenutzten IInitialState-Import (Zeile 9) und Constructor-Parameter (Zeile 29) entfernen, damit die Regressions-Grep-Erwartung ('IInitialState' → 0 Treffer im gesamten lib/) auch in diesem Randbereich stimmt. Funktionaler Bugfix ist davon nicht betroffen."
+  ],
+  "critical_code_review_comments": [
+    "PageController.php ist sauber umgestellt: Template-Vars statt provideInitialState, alle 6 Flags konsistent zwischen PHP → data-* → main.js.",
+    "src/main.js ist minimal & robust (Guard über if(mountEl), keine Nonce-Abhängigkeit, keine Runtime-publicPath-Manipulation dank webpack 'auto').",
+    "router.js: lastIndexOf('/apps/souvera_shield') ist korrekt für Sub-Path-Deployments (z.B. /nextcloud/apps/souvera_shield); der '/'-Fallback in navigate() (ROUTES.overview === '/') vermeidet doppelten Slash im generierten URL.",
+    "Toter Import IInitialState in QuarantineWidget wirkt harmlos (Nextcloud DI liefert die Instanz weiterhin), sollte aber aufgeräumt werden, um die Grep-Regressionsregel künftig automatisch zu erfüllen."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "N/A (skipped per request)"},
+  "seed_data_creation": "keine",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Rein statische Prüfung + PHPUnit (keine laufende Nextcloud-Instanz im Container). Alle bugfix-relevanten Kriterien der v3.1.1 erfüllt. Einziger Rest-Treffer im Regressions-Grep: IInitialState in lib/Dashboard/QuarantineWidget.php – ungenutzt, aber vorhanden. Falls Main-Agent absolute 0-Treffer-Regel durchsetzen will, dort Import + Constructor-Feld entfernen; PHPUnit muss danach erneut grün laufen.",
+  "rca_of_the_issue": "Ursprüngliches Problem: Der bisherige Bootstrap-Pfad rief in main.php einen Inline-<script nonce=…>-Block auf, dessen Nonce über den ContentSecurityPolicyNonceManager erzeugt wurde. Auf betroffenen Nextcloud-Versionen wirft dessen API-Surface einen fatalen Fehler → 'Interner Serverfehler' beim Seitenaufruf; danach initialisierte sich die Vue-Navigation ohne is_admin/allow_file_quarantine-Flags und blendete Menüpunkte (Reputation, Datei-Quarantäne) aus. Fix: Inline-Script komplett entfernt, Feature-Flags per data-*-Attribute an den Mount-DIV, main.js liest sie via dataset. Zusätzlich webpack publicPath: 'auto' (kein Runtime-Injection mehr nötig) und router.js lastIndexOf-Marker für Sub-Path-Setups. Statisch verifiziert – kein Rückfallpfad zum Nonce-Manager mehr im aktiven Code."
+}

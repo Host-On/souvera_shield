@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="/app/tests/phpunit.xml" tests="11" assertions="23" errors="0" failures="0" skipped="0" time="0.008263">
+    <testsuite name="unit" tests="11" assertions="23" errors="0" failures="0" skipped="0" time="0.008263">
+      <testsuite name="OCA\SouveraShield\Tests\Unit\Service\PMGClientTest" file="/app/tests/unit/Service/PMGClientTest.php" tests="7" assertions="15" errors="0" failures="0" skipped="0" time="0.006932">
+        <testcase name="testIsAllowedDomain" file="/app/tests/unit/Service/PMGClientTest.php" line="70" class="OCA\SouveraShield\Tests\Unit\Service\PMGClientTest" classname="OCA.SouveraShield.Tests.Unit.Service.PMGClientTest" assertions="4" time="0.004966"/>
+        <testcase name="testGetSpamQuarantineRejectsDisallowedDomain" file="/app/tests/unit/Service/PMGClientTest.php" line="85" class="OCA\SouveraShield\Tests\Unit\Service\PMGClientTest" classname="OCA.SouveraShield.Tests.Unit.Service.PMGClientTest" assertions="2" time="0.000387"/>
+        <testcase name="testLoginFailureThrowsPMGException" file="/app/tests/unit/Service/PMGClientTest.php" line="99" class="OCA\SouveraShield\Tests\Unit\Service\PMGClientTest" classname="OCA.SouveraShield.Tests.Unit.Service.PMGClientTest" assertions="2" time="0.000404"/>
+        <testcase name="testGetSpamQuarantineReturnsData" file="/app/tests/unit/Service/PMGClientTest.php" line="117" class="OCA\SouveraShield\Tests\Unit\Service\PMGClientTest" classname="OCA.SouveraShield.Tests.Unit.Service.PMGClientTest" assertions="3" time="0.000373"/>
+        <testcase name="testAddToWhitelistBuildsCorrectPayload" file="/app/tests/unit/Service/PMGClientTest.php" line="148" class="OCA\SouveraShield\Tests\Unit\Service\PMGClientTest" classname="OCA.SouveraShield.Tests.Unit.Service.PMGClientTest" assertions="1" time="0.000221"/>
+        <testcase name="testAddToWhitelistRejectsEmptyEntry" file="/app/tests/unit/Service/PMGClientTest.php" line="173" class="OCA\SouveraShield\Tests\Unit\Service\PMGClientTest" classname="OCA.SouveraShield.Tests.Unit.Service.PMGClientTest" assertions="1" time="0.000139"/>
+        <testcase name="testEncryptedPasswordIsDecryptedOnRead" file="/app/tests/unit/Service/PMGClientTest.php" line="191" class="OCA\SouveraShield\Tests\Unit\Service\PMGClientTest" classname="OCA.SouveraShield.Tests.Unit.Service.PMGClientTest" assertions="2" time="0.000442"/>
+      </testsuite>
+      <testsuite name="OCA\SouveraShield\Tests\Unit\Service\ProviderToolsClientTest" file="/app/tests/unit/Service/ProviderToolsClientTest.php" tests="4" assertions="8" errors="0" failures="0" skipped="0" time="0.001331">
+        <testcase name="testIsConfiguredReturnsFalseWhenCentralIsNotInstalled" file="/app/tests/unit/Service/ProviderToolsClientTest.php" line="59" class="OCA\SouveraShield\Tests\Unit\Service\ProviderToolsClientTest" classname="OCA.SouveraShield.Tests.Unit.Service.ProviderToolsClientTest" assertions="1" time="0.000905"/>
+        <testcase name="testCheckDmarcThrowsWithClearMessageWhenCentralMissing" file="/app/tests/unit/Service/ProviderToolsClientTest.php" line="68" class="OCA\SouveraShield\Tests\Unit\Service\ProviderToolsClientTest" classname="OCA.SouveraShield.Tests.Unit.Service.ProviderToolsClientTest" assertions="3" time="0.000203"/>
+        <testcase name="testCreateMailTestThrowsWithClearMessageWhenCentralMissing" file="/app/tests/unit/Service/ProviderToolsClientTest.php" line="83" class="OCA\SouveraShield\Tests\Unit\Service\ProviderToolsClientTest" classname="OCA.SouveraShield.Tests.Unit.Service.ProviderToolsClientTest" assertions="3" time="0.000135"/>
+        <testcase name="testDefaultBaseUrlIsUsedWhenNoOverride" file="/app/tests/unit/Service/ProviderToolsClientTest.php" line="96" class="OCA\SouveraShield\Tests\Unit\Service\ProviderToolsClientTest" classname="OCA.SouveraShield.Tests.Unit.Service.ProviderToolsClientTest" assertions="1" time="0.000087"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,29 @@
+{
+    "name": "souvera/shield",
+    "description": "Souvera Shield - Nextcloud app to manage Proxmox Mail Gateway quarantine & user filter lists.",
+    "license": "AGPL-3.0-or-later",
+    "type": "project",
+    "require": {
+        "php": ">=8.1"
+    },
+    "require-dev": {
+        "nextcloud/ocp": "dev-stable32",
+        "phpunit/phpunit": "^10.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "OCA\\SouveraShield\\": "lib/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "OCA\\SouveraShield\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit -c tests/phpunit.xml"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

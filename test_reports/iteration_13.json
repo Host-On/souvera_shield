@@ -1,0 +1,37 @@
+{
+  "summary": "v3.3.2 backend testing complete. PHPUnit-Suite 35/35 grün (93 assertions – +3 Tests vs. v3.3.1: testPortOverrideIsHonored, testInvalidPortOverrideFallsBackToDefault, testPort465ImpliesImplicitTls). Alle P0-Features verifiziert: (1) MailTestRelayConfig-Konstruktor akzeptiert nur (host, port, username, password) – security-Feld ist entfernt. (2) usesImplicitTls() liefert true nur für Port 465. (3) fromCentralSystemConfig hat neue Signatur (stalwartApiUrl, stalwartAdminUser, stalwartAdminSecret, smtpPortOverride=null); Port-Override wird honoriert, ungültig (≤0) → Default 587. (4) CentralSettings::mailTestRelay() liest zusätzlich souvera_central.stalwart_smtp_port und reicht ihn als 4. Argument durch. (5) SmtpMailTestRelay::send() – opportunistische STARTTLS-Logik: EHLO-Reply wird per supportsStartTls() nach '250-STARTTLS'/'250 STARTTLS' geparst, bei Erfolg via tryStartTls() Upgrade mit relaxed TLS-Context; bei Fehler → Warning + Fallback auf plain. (6) supportsStartTls / tryStartTls / tlsContextOptions sind private Methoden (per Reflection bestätigt). tlsContextOptions liefert ssl.verify_peer=false, verify_peer_name=false, allow_self_signed=true, SNI_enabled=true. (7) Port 465 → connect() nutzt ssl:// Präfix + relaxed TLS context, kein STARTTLS-Aufruf. (8) interpretMailerFailure() STAGE_STARTTLS erwähnt jetzt 'Implicit-TLS'/'Port 465'/'stalwart_smtp_port'; STAGE_CONNECT erwähnt zusätzlich stalwart_smtp_port. Regressions-Checks (reflection_check.php, l10n_di_check.php, mailtest_relay_v332_reflection_check.php) alle grün. Version 3.3.2 in appinfo/info.xml. PHP-Lint sauber für alle 4 geänderten Service-Files. Der stale v331-Reflection-Check ist nicht mehr im Repo (durch v332 ersetzt).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/unit/Service/MailTestRelayConfigTest.php",
+    "/app/tests/unit/Service/MailTestServiceDiagnosticsTest.php",
+    "/app/tests/mailtest_relay_v332_reflection_check.php",
+    "/app/tests/reflection_check.php",
+    "/app/tests/l10n_di_check.php",
+    "/app/test_reports/pytest/phpunit_v332_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "SmtpMailTestRelay::tryStartTls() nutzt error_get_last() zur Diagnose des TLS-Handshake-Fehlers. Da vor dem stream_socket_enable_crypto()-Aufruf keine Reset-Operation stattfindet (kein error_clear_last()), könnte im Warning-Log gelegentlich ein älterer, unverwandter PHP-Fehler auftauchen. Nice-to-have: error_clear_last() unmittelbar vor stream_socket_enable_crypto() setzen. Nicht funktionsrelevant.",
+    "SmtpMailTestRelay::supportsStartTls() ist robust gegen Groß-/Kleinschreibung ('250[- ]STARTTLS\\b' + /i). Multi-Line- und Final-Line-Varianten werden korrekt erkannt (per Reflection getestet).",
+    "MailTestRelayConfig::fromCentralSystemConfig() castet den optionalen smtpPortOverride-Parameter nicht mehr selbst – der Cast passiert in CentralSettings::mailTestRelay() via (int)$portRaw. Falls die config.php einen Non-Numeric-String enthält, würde (int)'foo' = 0 → landet im Fallback auf 587. OK und durch testInvalidPortOverrideFallsBackToDefault (Port 0) abgedeckt.",
+    "MailTestService::interpretMailerFailure() nutzt weiterhin die STAGE_STARTTLS-Konstante für den Implicit-TLS/465-Fall. Da STARTTLS im v3.3.2 opportunistisch ist, wird dieser Zweig nur noch für Port-465-Fehler ausgelöst (via readReply(220) in tryStartTls() bei implicit-TLS-Setup – Achtung: tryStartTls() wird für Port 465 gar nicht aufgerufen, weil !$config->usesImplicitTls() vorne bereits ausschließt). Der STAGE_STARTTLS-Zweig ist damit im normalen Flow tatsächlich unerreichbar; er bleibt nur als Diagnostik-Text bestehen für den (theoretischen) Fall eines externen Werfens. Nicht kritisch, aber Doku könnte klarstellen, dass MailTestRelayException::STAGE_STARTTLS derzeit nur noch aus Test-Kontext bzw. legacy-Pfaden kommt.",
+    "SmtpMailTestRelay::send() – tlsUpgraded wird in connect() auf false zurückgesetzt; wenn der Konstruktor mehrfach send() aufruft, ist der Zustand also sauber. Getter wasTlsUpgraded() liefert das erwartete Verhalten.",
+    "CentralSettings::mailTestRelay() – die drei stalwart_*-Werte sowie stalwart_smtp_port werden via getSystemValue() aus system.config gelesen. Ein Non-Existent-Key liefert null → Value-Object castet zu '' → returns null → MailTestService wirft STAGE_CONFIG. Korrekt."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "n/a (skipped)"},
+  "test_credentials": "n/a (Nextcloud PHP-App, kein HTTP-Testing im Pod)",
+  "seed_data_creation": "keine",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "v3.3.2 ist 100% grün. PHPUnit-Suite hat jetzt 35 Tests / 93 Assertions. Der alte v331-Reflection-Check wurde entfernt und durch tests/mailtest_relay_v332_reflection_check.php ersetzt. Beim nächsten Iteration darauf achten: (1) `vendor/bin/phpunit -c tests/phpunit.xml` muss 35+ Tests liefern; (2) MailTestRelayConfig-Konstruktor hat nur 4 Felder (host, port, username, password) – kein security, kein fromAddress; (3) usesImplicitTls() ist Port-465-only; (4) fromCentralSystemConfig hat 4. optionalen Parameter smtpPortOverride; (5) CentralSettings liest zusätzlich souvera_central.stalwart_smtp_port; (6) SmtpMailTestRelay hat drei neue private Methoden: supportsStartTls, tryStartTls, tlsContextOptions; (7) STARTTLS ist opportunistisch mit verify_peer=false + allow_self_signed=true; (8) STAGE_STARTTLS-Diagnostik-Text erwähnt Port 465 / Implicit-TLS / stalwart_smtp_port.",
+  "rca of the issue": "n/a – keine Bugs gefunden. Alle in review_request genannten P0-Features und Regressions-Prüfungen bestätigt: PHPUnit 35/35 (93 assertions inkl. 3 neuer Port-Override-Tests + STARTTLS-über-Port-465-Diagnostik-Test), reflection_check.php OK, l10n_di_check.php OK, mailtest_relay_v332_reflection_check.php OK, PHP-Lint OK, Version 3.3.2 verifiziert. Der v3.3.2 Self-Signed-Cert-Fix (opportunistic STARTTLS mit allow_self_signed=true) ist implementiert wie in der review_request beschrieben."
+}

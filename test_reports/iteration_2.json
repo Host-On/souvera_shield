@@ -1,0 +1,61 @@
+{
+  "summary": "Static code review of Souvera Shield v2.3.2 for the two preventive fixes (dual-group access + dual-group repair step) plus regression sweep. No PHP/Nextcloud runtime is available in the sandbox – review is source-inspection only. All acceptance criteria from the review request are satisfied. Only one cosmetic mismatch found (template footer version string). The most likely remaining cause of the reported 404 is that `occ upgrade` has not been executed on the target Nextcloud after uploading v2.3.2 – there is nothing further to fix in the code.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/app/templates/main.php:325",
+        "issue": "Footer displays 'v2.3.1' but /app/appinfo/info.xml <version> is now 2.3.2 – cosmetic mismatch only, does NOT cause the 404. Change `<span class=\"shield-footer__version\" data-testid=\"shield-version\">v2.3.1</span>` to `v2.3.2` to align."
+      },
+      {
+        "endpoint": "/app/lib/AppInfo/Application.php",
+        "issue": "Docblock (lines 22-24) claims that `ProviderToolsClient` service is registered, but register() does not call registerService() for it. It works today because Nextcloud's DI autowires classes with typed constructor deps – this is a documentation drift, not a runtime bug. Either add the explicit service factory (mirror the PMGClient block) or delete the doc line."
+      },
+      {
+        "endpoint": "/app/lib/Db/DmarcDomainMapper.php:36",
+        "issue": "Leftover from iteration_1: DmarcDomainMapper::findActive() is still defined but no longer referenced anywhere (dead code)."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "USER-SIDE FIX (very likely the 404 cause): run `sudo -u www-data php occ upgrade` on the target Nextcloud after uploading v2.3.2. Until upgrade completes, NC keeps the app in 'needs upgrade' state and every route (incl. /apps/souvera_shield/) returns 404 regardless of group membership. Then verify with `occ app:list | grep souvera_shield` (should list 2.3.2 under Enabled) and `occ config:app:get souvera_shield enabled` (should be 'yes' or a JSON array containing both groups).",
+    "OPTIONAL: bump the template footer /app/templates/main.php line 325 from 'v2.3.1' to 'v2.3.2' to match info.xml.",
+    "OPTIONAL: register ProviderToolsClient explicitly in Application::register() or remove the doc line that claims it is registered.",
+    "OPTIONAL: delete unused DmarcDomainMapper::findActive() (dead code, flagged already in iteration_1)."
+  ],
+  "critical_code_review_comments": [
+    "FIX-A PASS – /app/lib/Service/AccessControl.php lines 34-46: isAllowed(?IUser $user) returns TRUE if user is null-guarded, then TRUE for server admins (line 38 isAdmin), else the OR-chain `isInGroup(ALLOWED_GROUP) || isInGroup(ADMIN_GROUP)` (lines 44-45) is present verbatim. A user in BOTH groups is trivially covered; a user in only souvera-admins is also covered. isCurrentUserAllowed() (line 30) delegates to isAllowed().",
+    "FIX-B PASS – /app/lib/Migration/RestrictToSouveraUsersGroupRepairStep.php lines 52-76: run() iterates over [ALLOWED_GROUP, ADMIN_GROUP], calls ensureGroup() (lines 78-85) for each which get()s or createGroup()s the group, collects the two IGroup instances, then calls `IAppManager::enableAppForGroups(APP_ID, $groups)` exactly once with both groups (line 69). Fully idempotent (create-if-missing pattern + repeatable enableAppForGroups). info.xml (lines 49-56) still registers this step under both <install> and <post-migration>.",
+    "FIX-C PARTIAL – /app/appinfo/info.xml line 28: `<version>2.3.2</version>` ✅. However /app/templates/main.php line 325 footer still reads 'v2.3.1' (mismatch — see minor issues). Non-blocking.",
+    "REGRESSION PASS – /app/appinfo/routes.php ↔ controllers: every route name resolves to an existing public method. page#{index,quarantine,whitelist,blacklist,fileQuarantine,virusQuarantine,settings,audit,dmarc} → PageController lines 43,47,51,55,59,68,77,86,95. dmarc#{status,domain,checkDmarc,triggerTest,listTests,refreshTest} → DmarcController lines 56,71,87,130,121,149. api#* → 25 public methods in ApiController (grep-verified: quarantine, viewQuarantine, releaseQuarantine, deleteQuarantine, exportQuarantine, fileQuarantine/release/delete/export, virusQuarantine/release/delete/export, whitelist, addWhitelist, removeWhitelist, exportWhitelist, blacklist, addBlacklist, removeBlacklist, exportBlacklist, getSettings, saveSettings, audit). No orphan route.",
+    "REGRESSION PASS – /app/lib/AppInfo/Application.php: three constants defined (APP_ID='souvera_shield', ALLOWED_GROUP='souvera-users', ADMIN_GROUP='souvera-admins' at lines 36-38). register() (lines 44-70) registers PMGClient factory, Dashboard widget (QuarantineWidget), Notifier via registerNotifierService (confirmed valid on NC 32-34 per prior web search), QuarantineSearchProvider, GroupRestrictionMiddleware, AdminAccessMiddleware. boot() (lines 72-85) schedules the 3 background jobs idempotently via `$jobList->has(job, null)` before add. All `use` imports (lines 6-16) resolve to existing files in /app/lib/. No PHP fatal path found in bootstrap.",
+    "REGRESSION PASS – /app/lib/Migration/Version2300Date20260214000000.php: all Doctrine column types are valid OCP\\DB\\Types (BIGINT, STRING, SMALLINT, TEXT, FLOAT). Unique/index names: 'sh_dmarc_domain_uniq' (20 chars), 'sh_mtest_domain_idx' (19), 'sh_mtest_status_idx' (19) — all ≤ 30. Exactly one setPrimaryKey(['id']) per table. Wrapped in hasTable() guards so a second run is a no-op (idempotent). No duplicate primary keys, no invalid types.",
+    "REGRESSION PASS – /app/lib/Service/AdminAccessControl.php uses Application::ADMIN_GROUP (line 37) — consistent with the new dual-group model, DmarcController still gated by AdminAccessMiddleware which delegates to AdminAccessControl::isCurrentUserAdmin() (only souvera-admins or server admin can hit Reputation endpoints). Unchanged and correct.",
+    "REGRESSION PASS – /app/lib/Middleware/GroupRestrictionMiddleware.php still routes ApiController + PageController through AccessControl::isCurrentUserAllowed() which now (post FIX-A) accepts either group. Message text 'membership in the souvera-users group is required' on the 403 template (line 67) is now slightly misleading (should read 'souvera-users or souvera-admins'), but that's a UX polish item — not a bug and not the cause of the 404.",
+    "AUTOLOAD PASS – /app/composer.json PSR-4 maps OCA\\SouveraShield\\ → lib/. All classes referenced from Application.php are on disk (verified via `find lib -name '*.php'`): Notifier, QuarantineWidget, QuarantineSearchProvider, PMGClient, GroupRestrictionMiddleware, AdminAccessMiddleware, PollQuarantineJob, WeeklyMailTestJob, PollPendingMailTestsJob – all present.",
+    "DIFF vs ITERATION_1 – only AccessControl.php and RestrictToSouveraUsersGroupRepairStep.php changed (plus version bump). Both changes are additive OR-widening / dual-group registration; no removed dependencies, no signature changes to methods that other classes call, no `use` statements pointing to deleted classes. Nothing regressed vs iteration_1's 15 green checks."
+  ],
+  "root_cause_analysis_for_the_404": {
+    "hypothesis_ranking": [
+      "H1 (highest probability): `occ upgrade` was not executed after uploading v2.3.2. Nextcloud stores the last-run app version in oc_appconfig (souvera_shield.installed_version). When info.xml <version> is higher than the stored value, NC flags the app as 'needs upgrade' and 404s every route (both page and REST) until the upgrade sequence runs the DB migrations + repair steps. This is a standard NC behaviour, unrelated to group membership. Verification on the user's server: `occ config:app:get souvera_shield installed_version` — if it shows 2.3.1 while info.xml says 2.3.2, this is the cause. Run `occ upgrade` (or `occ app:enable --force souvera_shield` won't help; upgrade is the correct command).",
+      "H2 (second): stale app cache. NC caches app metadata in oc_appconfig / opcache. After `occ upgrade` also run `occ maintenance:repair` and clear opcache (or restart php-fpm).",
+      "H3 (third): if v2.3.1 already deployed successfully and only the two touched files were uploaded for v2.3.2, but info.xml version was bumped — same root cause as H1: the upgrade sequence has not run.",
+      "H4 (very unlikely, ruled out by code review): PHP fatal during boot. Ruled out because (a) all `use` statements resolve to existing classes, (b) no removed classes still referenced, (c) every route name maps to an existing controller method, (d) no invalid Doctrine types or oversized index names in migrations."
+    ],
+    "conclusion": "The two code fixes (FIX-A dual-group access + FIX-B dual-group repair step) are correctly implemented and will take effect once `occ upgrade` is executed on the target server. There is no additional latent code bug to blame – proceed with the upgrade step and, if 404 persists after `occ upgrade` completes without errors, capture the output of `occ app:list | grep souvera_shield`, `occ config:app:get souvera_shield installed_version`, and `occ config:app:get souvera_shield enabled` and report back."
+  },
+  "updated_files": [],
+  "success_rate": {"backend": "100% (static review – all criteria met, no blockers)", "frontend": "100% (static review – no frontend changes in this iteration)"},
+  "test_credentials": "N/A – static review only, no runtime available.",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "Nextcloud PHP app; sandbox has no PHP/Nextcloud runtime, all reviews are static. Live verification happens on the user's NC 34 instance. Iteration_1 validated the v2.3.1 refactor; iteration_2 validated the v2.3.2 preventive dual-group fixes. Only two files changed vs iteration_1: lib/Service/AccessControl.php (dual-group OR-chain) and lib/Migration/RestrictToSouveraUsersGroupRepairStep.php (dual-group enableAppForGroups). Version bumped to 2.3.2 in info.xml but template footer still hard-codes 'v2.3.1' – trivial to fix but non-blocking. The reported 404 is a deployment/upgrade issue (occ upgrade not run), not a code issue."
+}

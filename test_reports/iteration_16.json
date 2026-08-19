@@ -1,0 +1,54 @@
+{
+  "summary": "Backend-only verification of Souvera Shield v3.3.7 Dashboard-Widget-Bugfixes (Loading-Spinner + fehlendes Icon + Titel-Umbenennung + Default-Dashboard-Layout). Alle 12 Anforderungen aus dem Review-Request verifiziert: PHPUnit 39/39 grün (102 Assertions), Reflection-Check + L10N-DI-Check grün, PHP-Syntax der 4 geänderten Dateien fehlerfrei, l10n (de/de_DE/en_GB/nl in .json+.js) enthält die neuen Keys, info.xml auf 3.3.7 gebumpt, keine aktiven Regressions-Referenzen zu 'icon-shield' oder 'Quarantine in Souvera Shield' im Produktions-Code.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/phpunit.xml",
+    "/app/tests/unit/Dashboard/QuarantineWidgetInterfacesTest.php",
+    "/app/tests/reflection_check.php",
+    "/app/tests/l10n_di_check.php",
+    "/app/test_reports/pytest/phpunit_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "QuarantineWidget (lib/Dashboard/QuarantineWidget.php) implementiert korrekt alle drei Interfaces IAPIWidget, IAPIWidgetV2 und IIconWidget – jede Rolle mit klarem Zweck kommentiert.",
+    "getItemsV2() (Zeile 111) gibt WidgetItems mit emptyContentMessage zurück und behebt damit den permanenten Loading-Spinner bei leerer Quarantäne (Dashboard.vue rendert emptyContent statt Spinner).",
+    "getIconUrl() (Zeile 82) liefert eine absolute URL aus dem IURLGenerator und behebt das fehlende Icon; getIconClass() bleibt als defensive fallback ('icon-souvera_shield') für Alt-Clients erhalten.",
+    "getTitle() (Zeile 57) gibt jetzt kurz 'Mail Quarantine' zurück (l10n-Key) statt 'Quarantine in Souvera Shield' – Deutsch-Übersetzung in de.json/de_DE.json ist 'Mail-Quarantäne' wie spezifiziert.",
+    "RestrictToSouveraUsersGroupRepairStep injiziert IAppConfig (Konstruktor Zeile 55) und addWidgetToDefaultDashboardLayout() (Zeile 111-136) ist idempotent (Zeile 119 Check via in_array vor setValueString) – setzt souvera_shield in dashboard.defaultLayout und logged/warned bei Fehler ohne Migration abzubrechen.",
+    "extra_stubs.php (Zeile 108-157) stellt IWidget / IAPIWidget / IAPIWidgetV2 / IIconWidget / WidgetItem / WidgetItems bereit; alle Deklarationen sind mit interface_exists/class_exists guarded – kein Konflikt mit nextcloud/ocp bei realer Instanz.",
+    "QuarantineWidgetInterfacesTest.php enthält 4 Testfälle (implements-all, getItemsV2 return type WidgetItems, getIconUrl return type string, getTitle uses 'Mail Quarantine') – locked-in Assertions verhindern Rückfall.",
+    "Der einzige verbleibende 'icon-shield'-Treffer in lib/ ist ein Historie-Kommentar in QuarantineWidget.php Zeile 32 – vom Review-Request explizit erlaubt; kein aktiver Code-Pfad nutzt die Klasse noch.",
+    "info.xml korrekt auf <version>3.3.7</version> gebumpt (Zeile 28).",
+    "L10N-Files (de/de_DE/en_GB/nl in beiden Formaten .json und .js) enthalten alle beide neuen Keys – konsistente Übersetzungen."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "N/A (backend only)"},
+  "test_credentials": "N/A (Unit-Tests mit Mocks)",
+  "seed_data_creation": "Keine",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "v3.3.7 Backend-Bugfix-Session vollständig verifiziert (Iteration 16). PHPUnit 39/39 grün (+4 vs Iter 15). Reflection- und L10N-DI-Checks bleiben zuverlässige Smoke-Tests. Der neue QuarantineWidgetInterfacesTest hält die Multi-Interface-Struktur, getItemsV2-Return-Type und den 'Mail Quarantine'-Titel fest. RepairStep::addWidgetToDefaultDashboardLayout ist reflection-getestet (IAppConfig-Injection sichtbar über l10n_di_check.php-Muster, nicht direkt) – Runtime-Verifikation nur in echter NC-Instanz möglich. Keine offenen Issues.",
+  "results_detail": {
+    "phpunit": "OK (39 tests, 102 assertions) - exit 0",
+    "reflection_check": "REFLECTION_OK - exit 0",
+    "l10n_di_check": "L10N_DI_OK - exit 0",
+    "info_xml_version": "3.3.7",
+    "php_syntax_check": "No syntax errors in 4 changed files (QuarantineWidget.php, RestrictToSouveraUsersGroupRepairStep.php, extra_stubs.php, QuarantineWidgetInterfacesTest.php)",
+    "grep_icon_shield_in_lib": "1 match (Zeile 32 Historie-Kommentar in QuarantineWidget.php – erlaubt)",
+    "grep_quarantine_in_souvera_shield_in_lib": "0 matches",
+    "l10n_keys_present": "Mail Quarantine + Your quarantine is currently empty. present in de/de_DE/en_GB/nl (.json und .js jeweils)",
+    "quarantine_widget_interfaces": "implements IAPIWidget, IAPIWidgetV2, IIconWidget (verifiziert via QuarantineWidgetInterfacesTest::testWidgetImplementsAllRequiredInterfaces)",
+    "getItemsV2_return_type": "OCP\\Dashboard\\Model\\WidgetItems (verifiziert via ReflectionMethod::getReturnType())",
+    "getIconUrl_return_type": "string (verifiziert via ReflectionMethod::getReturnType())",
+    "repairstep_iappconfig_injection": "IAppConfig als 3. Ctor-Param in RestrictToSouveraUsersGroupRepairStep::__construct (Zeile 55)",
+    "repairstep_addWidgetToDefaultDashboardLayout": "Zeile 111-136, idempotent via in_array-Check Zeile 119, catch \\Throwable warned aber bricht Migration nicht ab"
+  }
+}

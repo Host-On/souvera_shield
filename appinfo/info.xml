@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+    <id>souvera_shield</id>
+    <name>Shield</name>
+    <summary>Manage your Proxmox Mail Gateway spam &amp; virus quarantine directly from Nextcloud.</summary>
+    <description><![CDATA[
+Souvera Shield is the Nextcloud user interface for **Proxmox Mail Gateway (PMG)**.
+
+It lets every user manage their own:
+
+- **Spam quarantine** – preview, release, delete (incl. bulk &amp; CSV export)
+- **File &amp; virus quarantine** – review attachments and infected mails (optional)
+- **Personal whitelist / blacklist** – maintain trusted and blocked senders
+- **Unified search** – find quarantine messages through the Nextcloud Ctrl+K palette
+- **Dashboard widget** – see the latest quarantined mails on the Nextcloud home
+- **Bell notifications** – periodic background job raises a notification when new mails arrive
+- **Audit log** – every release / delete is recorded for administrators
+
+Global settings (desktop notifications, daily summary, min spam score) are
+managed centrally through the **Souvera Central** app; Shield reads them at
+runtime and does not store its own copy.
+
+The app talks to PMG through Nextcloud's HTTP client; the PMG password is
+**encrypted at rest** via the Nextcloud ICrypto secret. It is fully integrated
+with Nextcloud's app layout and theming (NC 32–34) – no custom skin required.
+    ]]></description>
+	<version>4.0.49</version>
+    <licence>agpl</licence>
+    <author homepage="https://souvera.eu">Host-On Service Provider GmbH</author>
+    <namespace>SouveraShield</namespace>
+    <category>tools</category>
+    <category>integration</category>
+    <website>https://souvera.eu</website>
+    <bugs>https://github.com/Host-On/souvera_shield/issues</bugs>
+    <default_enable/>
+
+    <dependencies>
+        <php min-version="8.1"/>
+        <nextcloud min-version="32" max-version="34"/>
+    </dependencies>
+
+    <background-jobs>
+        <job>OCA\SouveraShield\BackgroundJob\PollQuarantineJob</job>
+        <job>OCA\SouveraShield\BackgroundJob\WeeklyMailTestJob</job>
+        <job>OCA\SouveraShield\BackgroundJob\PollPendingMailTestsJob</job>
+        <job>OCA\SouveraShield\BackgroundJob\ReputationAnalysisJob</job>
+        <job>OCA\SouveraShield\BackgroundJob\ScoreLoginTracesJob</job>
+        <job>OCA\SouveraShield\BackgroundJob\UpdateBaselinesJob</job>
+        <job>OCA\SouveraShield\BackgroundJob\CleanupLoginTracesJob</job>
+        <job>OCA\SouveraShield\DevOps\SelfUpdateJob</job>
+    </background-jobs>
+
+    <repair-steps>
+        <pre-update>
+            <!-- v4.0.27: `occ app:update souvera_shield` pulls the newest
+                 GitHub releases for all managed apps BEFORE the migration
+                 machinery runs — no manual git pull needed. -->
+            <step>OCA\SouveraShield\Repair\SelfUpdateNowStep</step>
+        </pre-update>
+        <install>
+            <step>OCA\SouveraShield\Migration\RestrictToSouveraUsersGroupRepairStep</step>
+        </install>
+        <pre-migration>
+            <step>OCA\SouveraShield\Migration\Version4000Date20260729000000</step>
+        </pre-migration>
+        <post-migration>
+            <step>OCA\SouveraShield\Migration\RestrictToSouveraUsersGroupRepairStep</step>
+            <step>OCA\SouveraShield\Migration\Version4000Date20260729000000</step>
+        </post-migration>
+    </repair-steps>
+
+    <commands>
+        <command>OCA\SouveraShield\Command\SetCredentialsCommand</command>
+		<command>OCA\SouveraShield\Command\DevopsChannel</command>
+		<command>OCA\SouveraShield\Command\TestSuspiciousLogin</command>
+		<command>OCA\SouveraShield\Command\SelfUpdate</command>
+    </commands>
+
+    <navigations>
+        <navigation>
+            <id>souvera_shield</id>
+            <name>Shield</name>
+            <route>souvera_shield.page.index</route>
+            <icon>appicon.svg</icon>
+            <order>50</order>
+        </navigation>
+    </navigations>
+</info>

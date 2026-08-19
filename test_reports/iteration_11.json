@@ -1,0 +1,50 @@
+{
+  "summary": "Iteration 11 (v3.3.0 SMTP-Mail-Test-Relay): Alle statischen Prüfungen komplett grün. PHPUnit 34/34 Tests / 79 Assertions (10 neue MailTestRelayConfigTest-Cases + 9 rewrittene MailTestServiceDiagnosticsTest-Cases). Neuer mailtest_relay_reflection_check.php bestätigt Klassen-Signaturen (MailTestRelayException stage-Konstanten, MailTestRelayConfig readonly-Felder + fromRaw()-Factory, SmtpMailTestRelay::send-Signatur, MailTestService ctor injectet CentralSettings + SmtpMailTestRelay statt IMailer, interpretMailerFailure-Neusignatur, CentralSettings::mailTestRelay()-Rückgabetyp). Regressions grün: reflection_check.php REFLECTION_OK + l10n_di_check.php L10N_DI_OK. PHP-Lint aller 7 geänderten/neuen Dateien: 0 Fehler. Version-Bump 3.3.0 in info.xml Zeile 28 bestätigt.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/unit/Service/MailTestRelayConfigTest.php",
+    "/app/tests/unit/Service/MailTestServiceDiagnosticsTest.php",
+    "/app/tests/mailtest_relay_reflection_check.php",
+    "/app/tests/reflection_check.php",
+    "/app/tests/l10n_di_check.php",
+    "/app/tests/phpunit.xml",
+    "/app/test_reports/pytest/phpunit_iteration_11.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "MailTestRelayConfig::fromRaw() prüft host/port/user/password via trim()==='', erlaubt aber Port='0' (int-Cast liefert 0). Kein blockierendes Problem (0 wäre offensichtlich falsche Config), aber eine explizite Port-Range-Prüfung (1..65535) wäre defensiver.",
+    "SmtpMailTestRelay::readReply() nutzt fgets($stream, 1024) und begrenzt Zeilenlänge auf 1024 Bytes. RFC 5321 § 4.5.3.1.5 erlaubt bis 512 Zeichen SMTP-Reply-Lines - passt. Für DATA-Multiline-Replies (nicht relevant hier) könnte das knapp werden, ist aber hier ok.",
+    "SmtpMailTestRelay ist als self-contained klassifiziert, öffnet aber echte TCP-Sockets über stream_socket_client(). MailTestServiceDiagnosticsTest umgeht das korrekt via createMock(SmtpMailTestRelay::class) - interpretMailerFailure() wird via Reflection isoliert getestet, ohne dass jemals ein Socket geöffnet wird. Kein Test für send() im Pod möglich (keine Mail-Infrastruktur) - dies ist ausdrücklich als 'reflection-basierte Prüfung reicht' im Review-Request akzeptiert.",
+    "MailTestService::dispatchEmail() fängt sowohl MailTestRelayException (mit stage) als auch generisches Throwable (fallback stage=STAGE_CONNECT). Beide werden in RuntimeException umgewrappt mit der stage-basierten Diagnostik-Message. Sauber.",
+    "interpretMailerFailure() STAGE_CONFIG-Branch liefert nur `$prefix . $where . ' ' . $raw` OHNE $relayInfo/$tail - konsistent mit dem Use-Case (Relay ist null → keine Verbindungsinfos vorhanden). Der aktuelle Code injectet stattdessen einen Dummy-Relay-Config im Test (via setUp), um den Branch mit gültiger Config-Instanz zu testen. Funktioniert, aber im Produktionspfad ist STAGE_CONFIG nur erreichbar wenn CentralSettings::mailTestRelay() null zurückgibt - dann kann interpretMailerFailure() gar nicht aufgerufen werden (siehe dispatchEmail Zeile 170-176: throw direkt, kein Aufruf von interpretMailerFailure). D.h. der STAGE_CONFIG-Case in interpretMailerFailure() ist toter Code im Produktionspfad - er existiert nur, damit die switch-Anweisung vollständig ist. Nicht blockierend, aber erwähnenswert.",
+    "MailTestService v3.3.0 verletzt Nextcloud IMailer-Konvention bewusst und dokumentiert. Class-Doc-Comment (Zeile 12-24) erwähnt aber noch 'Send an e-mail ... through Nextcloud's IMailer' (Zeile 17-18) - Dokumentation ist inkonsistent zur neuen Implementierung. Sollte auf SmtpMailTestRelay/Stalwart aktualisiert werden. Kein Funktionsproblem."
+  ],
+  "updated_files": [
+    "/app/tests/mailtest_relay_reflection_check.php (NEU - reflection sanity check für die 3 neuen Klassen + geänderte Signaturen)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "N/A (skipped per request)"},
+  "verification_details": {
+    "php_lint": "0 Fehler in MailTestRelayConfig.php, MailTestRelayException.php, SmtpMailTestRelay.php, MailTestService.php, CentralSettings.php, MailTestRelayConfigTest.php, MailTestServiceDiagnosticsTest.php",
+    "phpunit_total": "OK (34 tests, 79 assertions) in 6.417s via vendor/bin/phpunit -c tests/phpunit.xml",
+    "phpunit_new_mailtest_relay_config": "10 Cases: FullyPopulated / MissingHost/Port/User/Password / WhitespaceOnly / UnknownSecurityFallback / SslAndNone / FromDefaultsToUser / FromOverride",
+    "phpunit_diagnostics_rewritten": "9 Cases: Config/Connect/StartTLS/Auth/From/Rcpt/Data/Unknown/TruncateForDb - jeweils mit stage-spezifischen Config-Key-Referenzen",
+    "reflection_check_dmarc_provider": "REFLECTION_OK - DmarcController (9 Methoden) + ProviderToolsClient (6 Methoden) unverändert",
+    "l10n_di_check": "L10N_DI_OK - IL10N-Fix aus 3.1.2 erhalten",
+    "mailtest_relay_reflection": "MAILTEST_RELAY_REFLECTION_OK - alle 10 STAGE_-Konstanten + public readonly $stage / MailTestRelayConfig 6 readonly-Felder + fromRaw():?self / SmtpMailTestRelay::send(config,to,fromDisplay,subject,plainBody) / MailTestService ctor ohne IMailer, mit CentralSettings + SmtpMailTestRelay / interpretMailerFailure(raw,testEmail,stage,relay) / CentralSettings::mailTestRelay():?MailTestRelayConfig",
+    "version_bump": "info.xml Zeile 28: <version>3.3.0</version> bestätigt",
+    "junit_output": "/app/test_reports/pytest/phpunit_iteration_11.xml"
+  },
+  "seed_data_creation": "keine",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Nextcloud PHP-App ohne Runtime im Pod. PHPUnit MUSS mit -c tests/phpunit.xml aufgerufen werden (bootstrap.php lädt zwingend extra_stubs.php). SmtpMailTestRelay öffnet echte TCP-Sockets - Unit-Tests umgehen das via createMock(SmtpMailTestRelay::class) im MailTestServiceDiagnosticsTest. Reflection-Skripte via `php tests/<name>.php`. Alle 34 PHPUnit-Tests + 3 Reflection-Skripte grün. v3.3.0 komplett verifiziert.",
+  "rca of the issue": "Kein Issue. Bug-Fix aus Review-Request wurde umgesetzt: Neuer SmtpMailTestRelay ersetzt Nextcloud IMailer für Reputationsmail. IMailer nutzte generisches Instanz-SMTP-Konto ohne Sender-Alignment zu 'postmaster@' → Stalwart lehnte RCPT ab (Relay-Policy). Fix: MailTestRelayConfig-Value-Object liest dedizierte SMTP-Credentials (mailtest_smtp_*) aus souvera_central, SmtpMailTestRelay verhandelt selbstständig SMTP+STARTTLS+AUTH+MAIL+RCPT+DATA und wirft MailTestRelayException mit Stage-Label. Fehlt Config → klarer STAGE_CONFIG-Fehler statt IMailer-Fallback. MailTestService::interpretMailerFailure() ist stage-driven und nennt in jedem Branch den passenden mailtest_smtp_*-Config-Key. Version-Bump 3.2.0 → 3.3.0 (MINOR) wegen neuer öffentlicher Service-Klasse."
+}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Souvera Shield – Whitelist Preview</title>
+<link rel="stylesheet" href="/style-preview.css">
+</head>
+<body>
+
+<header class="nc-header">
+    <div class="nc-header__logo"><div class="nc-header__logo-icon">☁</div><span>Nextcloud</span></div>
+    <nav class="nc-header__apps">
+        <a>📁</a><a>✉️</a><a class="is-active">🛡️</a><a>📅</a><a>💬</a>
+    </nav>
+    <div class="nc-header__user">JD</div>
+</header>
+
+<div class="nc-body">
+    <nav id="app-navigation">
+        <ul class="app-navigation__list">
+            <li class="app-navigation-entry"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">📊</span><span class="app-navigation-entry__title">Übersicht</span></a></li>
+            <li class="app-navigation-entry"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">📧</span><span class="app-navigation-entry__title">Spam-Quarantäne</span></a></li>
+            <li class="app-navigation-entry"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">📎</span><span class="app-navigation-entry__title">Datei-Quarantäne</span></a></li>
+            <li class="app-navigation-entry"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">⚠</span><span class="app-navigation-entry__title">Virus-Quarantäne</span></a></li>
+            <li class="app-navigation-entry active"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">✓</span><span class="app-navigation-entry__title">Whitelist</span></a></li>
+            <li class="app-navigation-entry"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">✕</span><span class="app-navigation-entry__title">Blacklist</span></a></li>
+            <li class="app-navigation-entry"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">⚙</span><span class="app-navigation-entry__title">Einstellungen</span></a></li>
+        </ul>
+    </nav>
+
+    <main id="app-content">
+        <div class="shield-wrapper">
+            <section class="shield-section">
+                <header class="shield-section__header shield-section__header--with-action">
+                    <div>
+                        <h2>Whitelist</h2>
+                        <p class="shield-section__sub">Absender und Domains, die für deinen Account niemals als Spam eingestuft werden.</p>
+                    </div>
+                    <button class="button primary shield-button">+ Whitelist-Eintrag hinzufügen</button>
+                </header>
+                <div class="shield-table-wrap">
+                    <table class="shield-table">
+                        <thead><tr><th>Eintrag</th><th>Typ</th><th class="shield-table__col-action">Aktion</th></tr></thead>
+                        <tbody>
+                            <tr><td>kollege@souvera.eu</td><td>E-Mail</td><td class="shield-table__col-action"><button class="shield-action shield-action--danger">Entfernen</button></td></tr>
+                            <tr><td>partner@example.com</td><td>E-Mail</td><td class="shield-table__col-action"><button class="shield-action shield-action--danger">Entfernen</button></td></tr>
+                            <tr><td>trusted-vendor.de</td><td>Domain</td><td class="shield-table__col-action"><button class="shield-action shield-action--danger">Entfernen</button></td></tr>
+                            <tr><td>newsletter.opensource.org</td><td>Domain</td><td class="shield-table__col-action"><button class="shield-action shield-action--danger">Entfernen</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<div class="preview-switch">
+    <button id="btn-light">☀ Light</button>
+    <button id="btn-dark" class="is-active">🌙 Dark</button>
+</div>
+<script>
+    const root = document.documentElement;
+    document.getElementById('btn-light').onclick = () => { root.dataset.theme = 'light'; t('light'); };
+    document.getElementById('btn-dark').onclick = () => { root.dataset.theme = 'dark'; t('dark'); };
+    function t(m){ document.getElementById('btn-light').classList.toggle('is-active', m==='light'); document.getElementById('btn-dark').classList.toggle('is-active', m==='dark'); }
+</script>
+</body>
+</html>

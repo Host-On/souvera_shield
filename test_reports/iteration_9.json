@@ -1,0 +1,40 @@
+{
+  "summary": "P0 Bugfix verifiziert: IL10N -> IFactory DI-Refactor in QuarantineWidget + QuarantineSearchProvider. Alle statischen PHP-Prüfungen grün (PHP-Lint, l10n_di_check, reflection_check, PHPUnit 17/17). Version-Bump 3.1.2 bestätigt.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/l10n_di_check.php",
+    "/app/tests/reflection_check.php",
+    "/app/tests/phpunit.xml",
+    "/app/test_reports/pytest/phpunit_iteration_9.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Beide gepatchte Klassen (QuarantineWidget, QuarantineSearchProvider) folgen jetzt exakt dem Muster aus Notification/Notifier.php (IFactory-Injection + $factory->get(Application::APP_ID) im ctor). Konsistenz mit Nextcloud-Core-Apps gegeben.",
+    "Property $l ist readonly und wird im ctor initialisiert - saubere PHP 8.2 Semantik.",
+    "l10n_di_check.php prueft beide Bedingungen (a) erster Param = IFactory, (b) kein Param = IL10N direkt - defensiv geschrieben und wirkt als dauerhafter Regressionsschutz.",
+    "Hinweis (nicht blockierend): getItems() in QuarantineWidget nutzt PMGClient::getSpamQuarantine ohne den 2. Param $withMeta - Verhalten unveraendert zum Fix, aber sollte im Kontext der DI-Aenderung nicht regressen."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "N/A (skipped per request)"},
+  "verification_details": {
+    "php_lint_QuarantineWidget": "No syntax errors detected",
+    "php_lint_QuarantineSearchProvider": "No syntax errors detected",
+    "l10n_di_check": "L10N_DI_OK - beide Klassen: erster ctor-Param OCP\\L10N\\IFactory ($l10nFactory), kein OCP\\IL10N direkt",
+    "reflection_check": "REFLECTION_OK - DmarcController + ProviderToolsClient Signaturen unveraendert",
+    "phpunit": "OK (17 tests, 38 assertions) via `vendor/bin/phpunit -c tests/phpunit.xml`",
+    "version_bump": "info.xml <version>3.1.2</version> bestaetigt"
+  },
+  "seed_data_creation": "keine",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Nextcloud PHP-App ohne Runtime im Pod. Verifikation ausschliesslich statisch via Reflection + PHPUnit. Wichtig: PHPUnit MUSS mit `-c tests/phpunit.xml` aufgerufen werden, sonst wird bootstrap.php nicht geladen. Reflection-Skripte unter /app/tests/*_check.php direkt via `php tests/<name>.php` ausfuehren.",
+  "rca of the issue": "Nextcloud Server-Container DI (Pimple-basiert) kann OCP\\IL10N nicht auto-wiren, da die IL10N-Instanz vom app-id-Kontext abhaengt (IFactory::get($appId)). Fix ist Standard-Nextcloud-Pattern: IFactory injecten und im ctor via $factory->get(Application::APP_ID) die lokalisierte Instanz derivieren. Bereits in Notifier.php etabliert, jetzt konsistent in QuarantineWidget + QuarantineSearchProvider angewendet."
+}

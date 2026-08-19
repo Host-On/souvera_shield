@@ -1,0 +1,48 @@
+{
+  "summary": "P1 Retry-Logic in PollQuarantineJob verifiziert. Alle statischen PHP-Prüfungen grün: PHP-Lint (0 Fehler), reflection_check.php (REFLECTION_OK), l10n_di_check.php (L10N_DI_OK), PHPUnit 21/21 tests / 46 assertions. Neue PollQuarantineJobRetryTest mit 4 Cases läuft komplett grün (~6.4s wegen echter usleep-Calls). Version-Bump 3.2.0 in appinfo/info.xml bestätigt.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/unit/BackgroundJob/PollQuarantineJobRetryTest.php",
+    "/app/tests/reflection_check.php",
+    "/app/tests/l10n_di_check.php",
+    "/app/tests/phpunit.xml",
+    "/app/test_reports/pytest/phpunit_iteration_10.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "PollQuarantineJob::processUser ruft ausschließlich fetchQuarantineWithRetry() auf (Zeile 75) - kein direkter try/catch auf PMGClient::getSpamQuarantine im business flow mehr. Retry-Logik ist sauber gekapselt.",
+    "RETRY_BACKOFFS_US = [200_000, 1_000_000, 5_000_000] entspricht exakt der geforderten 200ms→1s→5s Kadenz. count()+1 = 4 attempts (initial + 3 retries) - stimmt mit testRetriesFourTimesOnTransientErrorsAndThenReturnsNull überein.",
+    "isRetryable() akzeptiert Status 0 (Connection-Abbruch), 502/503/504 und ALLE >=500. Client-Fehler 401/403/404 sind <500 und werden nicht retryed - Verhalten korrekt.",
+    "Redundanz-Hinweis (nicht blockierend): `$status === 502 || $status === 503 || $status === 504` ist bereits von `$status >= 500` abgedeckt. Explizite Aufzählung schadet nicht, aber ist logisch dedundant. Könnte auf `$status === 0 || $status >= 500` gekürzt werden. Verhalten bleibt identisch.",
+    "PollQuarantineJobRetryTest verwendet Reflection auf private fetchQuarantineWithRetry() - saubere Isolation der Retry-Logik ohne processUser-Setup. Test-Kommentar in Zeile 71-74 dokumentiert ehrlich, dass die Test-Suite ~6s dauert (nicht ideal, aber korrekt).",
+    "extra_stubs.php enthält jetzt Stubs für IUserManager, INotificationManager, ITimeFactory, TimedJob/Job sowie IL10N/IUser/IUserSession - Bootstrap lädt es unbedingt (nicht mehr nur wenn Namespace fehlt). Kommentar in extra_stubs.php Zeile 5-7 (\"NOT loaded during PHPUnit\") ist jetzt IRREFÜHREND, sollte aktualisiert werden. Kein Funktionsproblem."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "N/A (skipped per request)"},
+  "verification_details": {
+    "php_lint_PollQuarantineJob": "No syntax errors detected",
+    "php_lint_PollQuarantineJobRetryTest": "No syntax errors detected",
+    "php_lint_extra_stubs": "No syntax errors detected",
+    "php_lint_bootstrap": "No syntax errors detected",
+    "php_lint_PMGException": "No syntax errors detected",
+    "reflection_check": "REFLECTION_OK - DmarcController (9 Methoden) + ProviderToolsClient (6 Methoden) Signaturen unverändert",
+    "l10n_di_check": "L10N_DI_OK - QuarantineWidget + QuarantineSearchProvider erste ctor-Param OCP\\L10N\\IFactory (IL10N-Fix aus 3.1.2 erhalten)",
+    "phpunit_total": "OK (21 tests, 46 assertions) via `vendor/bin/phpunit -c tests/phpunit.xml` in 6.415s",
+    "phpunit_retry_suite": "OK (4/4 tests) - PollQuarantineJobRetryTest: succeedsOnFirstAttempt, retriesFourTimesOnTransientErrorsAndThenReturnsNull, doesNotRetryOnPermanentClientError, recoversAfterOneTransientError",
+    "version_bump": "info.xml <version>3.2.0</version> bestätigt (Zeile 28)",
+    "processUser_uses_retry": "Ja - Zeile 75: $res = $this->fetchQuarantineWithRetry($user, $email); getSpamQuarantine wird nur noch aus fetchQuarantineWithRetry (Zeile 118) aufgerufen"
+  },
+  "seed_data_creation": "keine",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Nextcloud PHP-App ohne Runtime im Pod. PHPUnit MUSS mit `-c tests/phpunit.xml` aufgerufen werden (bootstrap.php lädt jetzt zwingend extra_stubs.php). Retry-Suite dauert ~6s wegen echter usleep-Calls (200ms+1s+5s) - NICHT abbrechen. Reflection-Skripte direkt via `php tests/<name>.php`. Alle 21 PHPUnit tests grün, keine offenen Issues.",
+  "rca of the issue": "Kein Issue. Retry-Logic wurde P1-konform implementiert: 4 attempts (initial+3 retries) mit Backoff 200ms→1s→5s (RETRY_BACKOFFS_US-Konstante), Transient-Erkennung via HTTP-Status (0/502/503/504/>=500), permanente 4xx-Fehler brechen sofort ab. Reflection-basierte Tests bestätigen alle 4 geforderten Cases."
+}

@@ -1,0 +1,148 @@
+SOUVERA SHIELD – REPUTATION MANAGEMENT
+Zusammenfassung der Funktionen für die Produkt-Website
+(Stand: Juni 2026, App-Version 3.5.x)
+
+=======================================================================
+WAS IST DAS REPUTATION MANAGEMENT?
+=======================================================================
+
+Das Reputation Management von Souvera Shield überwacht kontinuierlich
+die E-Mail-Reputation der eigenen Workspace-Domain – direkt aus
+Nextcloud heraus. Es kombiniert echte DMARC-Report-Daten, aktive
+Zustellbarkeits-Prüfungen und praxisnahe Mail-Tests über den eigenen
+Mail-Server zu einem verständlichen Gesamtbild. Alle Werte basieren
+auf realen Messdaten, nichts wird geschätzt oder simuliert.
+
+=======================================================================
+DIE FUNKTIONEN IM ÜBERBLICK
+=======================================================================
+
+1. REPUTATIONS-SCORE (0–100)
+-----------------------------------------------------------------------
+Ein täglich neu berechneter Gesamt-Score fasst die Mail-Reputation der
+Domain in einer Zahl zusammen. Der Score setzt sich gewichtet aus fünf
+Komponenten zusammen:
+
+  • DMARC-Auswertung (30 %) – DKIM-/SPF-Pass-Raten aus echten
+    Aggregate-Reports der großen Provider
+  • Mail-Test-Ergebnisse (25 %) – Resultate der Reputations-Mail-Tests
+  • Blacklist-Status (20 %) – Präsenz der Versand-IP auf gängigen
+    DNS-Blacklists
+  • Infrastruktur (15 %) – SPF-Record, DMARC-Policy, MTA-STS, TLS-RPT,
+    PTR/HELO, TLS-Verschlüsselung, BIMI u. a.
+  • Vorfälle (10 %) – offene Reputations-Vorfälle
+
+Komponenten ohne ausreichende Datenbasis werden transparent
+ausgewiesen und aus der Berechnung ausgeschlossen. Tägliche Snapshots
+machen die Score-Entwicklung über Wochen und Monate nachvollziehbar
+(Verlaufs-Diagramm mit 7/30/90-Tage-Ansicht).
+
+2. PROVIDER-SPEZIFISCHE REPUTATION
+-----------------------------------------------------------------------
+Wie sehen Google (Gmail), Microsoft (Outlook/Office 365), Yahoo und
+GMX/Web.de die eigene Domain? Souvera Shield wertet die DMARC-Reports
+jedes Providers getrennt aus und zeigt pro Provider:
+
+  • Nachrichten-Volumen im gewählten Zeitraum
+  • DKIM- und SPF-Pass-Raten
+  • Gesamturteil (gut / auffällig / kritisch)
+  • Datum des letzten empfangenen Reports
+
+So wird sofort sichtbar, wenn z. B. nur Microsoft Zustellprobleme
+meldet, während Google alles akzeptiert.
+
+3. ZUSTELLBARKEITS-CHECKS MIT HANDLUNGSEMPFEHLUNGEN
+-----------------------------------------------------------------------
+Auf Knopfdruck (und automatisch im Hintergrund) prüft Souvera Shield
+die komplette Versand-Infrastruktur der Domain:
+
+  • SPF-Record (Syntax, Lookup-Limits)
+  • DMARC-Policy (none/quarantine/reject, Reporting-Adressen)
+  • MTA-STS und TLS-RPT
+  • PTR-/Reverse-DNS und HELO-Abgleich
+  • TLS-Verschlüsselung des Mail-Servers
+  • BIMI (Marken-Logo im Posteingang)
+  • One-Click-Unsubscribe (RFC 8058, Pflicht bei Google/Yahoo)
+  • DNS-Blacklist-Prüfung der Versand-IP
+
+Jede Warnung erklärt in Klartext, was das Problem ist und wie es
+behoben wird. Die ausgehende IP wird automatisch ermittelt (aus dem
+letzten Mail-Test, dem Stalwart-Host oder dem MX-Record).
+
+4. VERSANDQUELLEN-ANALYSE & MISSBRAUCHSERKENNUNG
+-----------------------------------------------------------------------
+Alle Server, die im Namen der Domain E-Mails versenden, werden aus den
+DMARC-Report-Daten extrahiert und automatisch klassifiziert:
+
+  • Legitime Quellen (eigener Server, bekannte Dienste)
+  • Unbekannte Quellen
+  • Potenziell missbräuchliche Quellen (Versand ohne SPF/DKIM-Pass –
+    mögliches Spoofing oder Phishing im Namen der Domain)
+
+Anomalien werden hervorgehoben, damit Domain-Missbrauch früh auffällt.
+
+5. VORFALLS-MANAGEMENT (INCIDENTS)
+-----------------------------------------------------------------------
+Erkennt die tägliche Analyse ein Problem – etwa einen
+Blacklist-Eintrag, einbrechende DKIM-Pass-Raten oder fehlgeschlagene
+Mail-Tests – wird automatisch ein Vorfall angelegt, mit:
+
+  • Ursache und betroffener Domain/IP
+  • Zeitpunkt der Erkennung und kompletter Historie
+  • Status offen/gelöst (manuell auflösbar)
+  • Deduplizierung: derselbe Vorfall wird nicht mehrfach angelegt
+
+So entsteht eine lückenlose Chronik aller Reputationsprobleme.
+
+6. PRAXISNAHE MAIL-TESTS ÜBER DEN EIGENEN MAIL-SERVER
+-----------------------------------------------------------------------
+Jeden Sonntag (und jederzeit auf Knopfdruck) verschickt Souvera Shield
+eine Testnachricht an eine Analyse-Mailbox von provider.tools – und
+zwar über den eigenen Stalwart-Mail-Server des Kunden, nicht über
+irgendeinen fremden Dienst. Nur so spiegeln die Ergebnisse die echte
+Server-Reputation wider:
+
+  • Geprüft werden SPF, DKIM, DMARC, die tatsächliche Versand-IP,
+    PTR und Spam-Score der Nachricht
+  • Der Versand erfolgt authentifiziert (SMTP-AUTH) als
+    postmaster@<domain>; das Postfach wird vollautomatisch über die
+    Stalwart-Management-API angelegt und verwaltet
+  • Selbstheilung: Wird das Passwort serverseitig geändert oder das
+    Konto gelöscht, provisioniert Souvera Shield es automatisch neu
+  • Vollständige Test-Historie mit allen Einzelergebnissen
+
+7. DMARC-ANALYZER
+-----------------------------------------------------------------------
+Die Basis des Moduls: Registrierung und Verifizierung der Domain beim
+provider.tools DMARC-Analyzer, laufender Empfang von
+Aggregate-Reports, DKIM-/SPF-Statistiken, Top-Sender-Auswertung und
+Zeitverlaufs-Diagramme (Nachrichten pro Tag, Pass-Raten-Trends) –
+wahlweise für 7, 30 oder 90 Tage.
+
+=======================================================================
+BEDIENUNG & INTEGRATION
+=======================================================================
+
+  • Eigener Navigationsbereich "Reputation" in der Souvera-Shield-App
+    mit sechs übersichtlichen Seiten: Score & Analyse,
+    Provider-Reputation, Zustellbarkeits-Checks, Versandquellen,
+    Vorfälle und Mail-Tests
+  • Nahtlos in Nextcloud (ab NC 34) integriert, folgt vollständig dem
+    Nextcloud-Design (helles/dunkles Theme)
+  • Tägliche automatische Hintergrund-Analyse; manuelle Analyse
+    jederzeit per Klick
+  • Zugriff ausschließlich für Mitglieder der Gruppe souvera-admins
+  • Alle Zugangsdaten und Secrets werden verschlüsselt gespeichert
+  • Mehrsprachig: Deutsch, Englisch, Niederländisch
+
+=======================================================================
+TECHNISCHER UNTERBAU (KURZFASSUNG)
+=======================================================================
+
+  • Datenquellen: provider.tools API (DMARC-Reports, Mail-Test-
+    Analyse), eigene DNS-/SMTP-Prüfungen, DNS-Blacklist-Abfragen
+  • Mail-Versand: direkt über den kundeneigenen Stalwart-Mail-Server
+    (SMTP-AUTH, automatische Postfach-Provisionierung über die
+    Stalwart-Management-API / JMAP)
+  • Score-Snapshots und Vorfälle werden in der Nextcloud-Datenbank
+    versioniert abgelegt

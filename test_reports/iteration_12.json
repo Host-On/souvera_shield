@@ -1,0 +1,42 @@
+{
+  "summary": "v3.3.1 backend testing complete. PHPUnit-Suite 32/32 grün mit 85 assertions. Alle P0-Features verifiziert: MailTestRelayConfig::fromCentralSystemConfig() Factory ersetzt fromRaw() (fromAddress-Feld entfernt, per-Send Parameter), URL-Parsing (https/http/bare host/host:port/whitespace) korrekt, drei Central-System-Config-Keys werden über neuen IConfig-Inject in CentralSettings gelesen, SmtpMailTestRelay::send() akzeptiert $fromAddress als Parameter, MailTestService::interpretMailerFailure() nennt in allen Stage-Texten die drei stalwart_* Keys (statt der alten sechs mailtest_smtp_*), STAGE_FROM erwähnt administrator-Rolle. Regressions-Checks (reflection_check.php, l10n_di_check.php) weiter grün. Version 3.3.1 in appinfo/info.xml. PHP-Lint sauber für alle geänderten Dateien.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "tests/mailtest_relay_reflection_check.php", "issue": "Stale v3.3.0 Reflection-Check-Skript liegt noch im Repo und würde bei Ausführung fehlschlagen (erwartet fromRaw/fromAddress). Es ist nicht Teil der PHPUnit-Suite und nicht in der review_request als Regressions-Prüfung genannt, aber sollte entweder aktualisiert/entfernt werden, damit spätere Agenten es nicht versehentlich als Regression werten. Ersatz liegt jetzt unter tests/mailtest_relay_v331_reflection_check.php."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/unit/Service/MailTestRelayConfigTest.php",
+    "/app/tests/unit/Service/MailTestServiceDiagnosticsTest.php",
+    "/app/tests/mailtest_relay_v331_reflection_check.php",
+    "/app/tests/reflection_check.php",
+    "/app/tests/l10n_di_check.php"
+  ],
+  "action_items": [
+    "Optional: Veraltete tests/mailtest_relay_reflection_check.php (v3.3.0) entfernen oder durch den neuen v331 Check ersetzen, damit sie nicht als Regression missverstanden wird."
+  ],
+  "critical_code_review_comments": [
+    "MailTestRelayConfig::extractHost() nutzt strtok() – bei Input wie 'mail.souvera.eu:8080' liefert parse_url() bereits einen 'host'-Key nicht (weil kein Scheme), fällt daher in den Fallback, wo strtok($host, '/:') sauber trennt. Verhalten ist korrekt und durch Test testBareHostnameWithPortStripsThePort abgedeckt.",
+    "MailTestRelayConfig::fromCentralSystemConfig(): Passwort wird nicht getrimmt (nur '' als leer erkannt) – korrekt, da Whitespace in Secrets signifikant sein kann. Doku-Kommentar in Klasse macht das explizit.",
+    "CentralSettings::mailTestRelay() liest system values ohne explizite Type-Casts – IConfig::getSystemValue() liefert mixed. fromCentralSystemConfig castet intern via (string) und trim(), damit int/bool aus config.php nicht crashen. OK.",
+    "MailTestService::dispatchEmail() reicht $domain->getSenderAddress() als $fromAddress durch – kein null-check. Falls DmarcDomain::getSenderAddress() null zurückgeben kann, würde SmtpMailTestRelay::send() mit leerem MAIL FROM enden. Sollte auf DB-Schema-Ebene garantiert non-null sein; sonst defensive Prüfung sinnvoll.",
+    "SmtpMailTestRelay::send() – IConfig-Verifikation im Value-Object statt hier ist gut, aber $fromAddress selbst wird nicht validiert (Format 'local@domain'). deriveEhloHost() fällt bei fehlendem '@' auf 'shield.souvera.local' zurück – akzeptabel als Best-Effort.",
+    "SmtpMailTestRelay öffnet echte TCP-Sockets in send() – Unit-Tests mocken deshalb den ganzen Relay-Service, was in MailTestServiceDiagnosticsTest korrekt gemacht wird (createMock(SmtpMailTestRelay::class))."
+  ],
+  "updated_files": [
+    "/app/tests/mailtest_relay_v331_reflection_check.php (neu angelegt – ersetzt inhaltlich die stale v3.3.0-Datei)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "n/a (skipped)"},
+  "test_credentials": "n/a (Nextcloud PHP-App, kein HTTP-Testing im Pod)",
+  "seed_data_creation": "keine",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "v3.3.1 ist grün. Beim Test von v3.3.2+ bitte darauf achten: (1) `vendor/bin/phpunit -c tests/phpunit.xml` muss weiter 32+ tests grün liefern; (2) `tests/reflection_check.php` und `tests/l10n_di_check.php` sind die aktuellen Regressions-Checks; (3) `tests/mailtest_relay_reflection_check.php` (v3.3.0) ist veraltet und sollte NICHT ausgeführt werden – Ersatz: `tests/mailtest_relay_v331_reflection_check.php`; (4) `MailTestRelayConfig` hat KEIN fromAddress-Feld mehr, `SmtpMailTestRelay::send()` bekommt es per Parameter, `MailTestService::interpretMailerFailure()` hat 5 Parameter (raw, testEmail, stage, relay, fromAddress); (5) `CentralSettings` ctor injectet zwei Interfaces (IAppConfig + IConfig); (6) Version in appinfo/info.xml aktuell 3.3.1.",
+  "rca of the issue": "n/a – keine Bugs gefunden. Alle in review_request genannten P0-Features und Regressions-Prüfungen bestätigt: PHPUnit 32/32 (85 assertions), reflection_check.php OK, l10n_di_check.php OK, dedizierter v3.3.1 Reflection-Check OK, PHP-Lint OK für alle 5 geänderten Service-Files + 2 Test-Files, Version 3.3.1 verifiziert."
+}

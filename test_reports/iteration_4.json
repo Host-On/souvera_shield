@@ -1,0 +1,49 @@
+{
+  "summary": "Backend-only Prüfung (statisch + PHPUnit + Reflection) für Souvera Shield v2.4.0. Alle 12 Anforderungspunkte des review_request grün. php -l über lib/ + appinfo/ ist 0 Fehler, PHPUnit-Suite: 11 Tests / 23 Assertions PASSED, Reflection bestätigt Method-Signaturen von DmarcController und ProviderToolsClient. Regressions-grep für dmarc-recheck / checkDmarc-im-Controller / renderRecordBadge / handleDmarcRecheck / d.dmarc.dmarc / dmarc#checkDmarc-Route liefert 0 Treffer. /dmarc-check taucht nur noch im deprecated checkDmarc() + Doc-Kommentaren auf (laut Spec zulaessig).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "templates/main.php – Reports-Tbody",
+        "issue": "Spec listet data-role='dmarc_reports-tbody', tatsaechlich wird 'tbody[data-list=\"dmarc_reports\"]' verwendet. Kein Funktionsproblem (JS + Template konsistent, siehe js/app.js:757), nur Wording-Diskrepanz gegenueber review_request-Text."
+      },
+      {
+        "endpoint": "templates/main.php – Statistik-Range-Buttons",
+        "issue": "Spec sagt '7/30/90-Buttons' im dmarc-stats-range; implementiert als data-days=\"7|30|90\" (nicht data-range). JS matcht darauf (js/app.js:706/711) – funktional korrekt, keine Aktion noetig."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/unit/Service/ProviderToolsClientTest.php",
+    "/app/tests/unit/Service/PMGClientTest.php",
+    "/app/tests/reflection_check.php",
+    "/app/tests/extra_stubs.php",
+    "/app/test_reports/pytest/phpunit_iter4.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "DmarcController::triggerTest() – Rollback-Logik korrekt: bei MailTest::STATUS_ERROR wird tests->delete($test) mit try/catch aufgerufen und HTTP 502 mit ErrorMessage zurueckgegeben (kein Historien-Rest). Ausgezeichnet.",
+    "ProviderToolsClient::readToken() – auth kapselt saubereren Fallback wenn souvera_central fehlt (leerer Token -> ProviderToolsException mit occ-Hinweis). Isolation gegen fehlendes Central OK.",
+    "Migration Version2400Date20260215000000 – idempotent (hasColumn-Guards), Typen konsistent (BIGINT fuer registered_at, TEXT fuer dmarc_record). Nur mit vorhandener Tabelle aktiv (hasTable-Guard). Solide.",
+    "Legacy checkDmarc() in ProviderToolsClient bleibt bewusst als @deprecated Wrapper – dadurch bleiben die alten Unit-Tests kompatibel; sauber."
+  ],
+  "updated_files": [
+    "/app/tests/reflection_check.php (neu, ad-hoc Reflection-Check)",
+    "/app/tests/extra_stubs.php (neu, OCP-Stubs fuer reflection_check.php)"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "n/a (nicht getestet – Nur-Backend-Auftrag)"
+  },
+  "test_credentials": "n/a",
+  "seed_data_creation": "n/a",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend v2.4.0 vollstaendig grün. Regressions-Grep-Set (dmarc-recheck, /dmarc-check nur in deprecated+Docs, renderRecordBadge, handleDmarcRecheck) fuer zukuenftige Iterationen aufbewahren. Bei Frontend-Test kann tbody-Selektor 'tbody[data-list=\"dmarc_reports\"]' + '[data-days=\"7|30|90\"]' fuer Range-Buttons verwendet werden.",
+  "rca of the issue": "n/a – keine Bugs gefunden."
+}

@@ -1,0 +1,49 @@
+{
+  "summary": "Backend-Verifikation für Souvera Shield v3.0.0 (Vue-3-Umbau des Frontends, Backend 1:1 belassen). Alle 10 Anforderungspunkte des review_request GRÜN. Testing_type='backend only(skip frontend)'. Kein FastAPI/React, sondern Nextcloud-PHP-App mit Vue-3-SPA-Bundle. PHP-Syntax über lib/+appinfo/: 0 Fehler. PHPUnit: 17 Tests / 38 Assertions PASSED (alle Vor-Iterations-Tests inkl. MailTestServiceDiagnosticsTest, PMGClientTest, ProviderToolsClientTest weiterhin grün, +1 Test/5 Assertions ggü. Iter 5). PageController.php korrekt umgeschrieben: Util::addScript(APP_ID, 'souvera_shield-main') (nicht mehr 'app'), IInitialState mit provideInitialState('flags'|'version'|'initialPage'), alle Access-Checks (allow_file_quarantine, allow_virus_quarantine, isAdmin, isSouveraAdmin) mit forbidden()-403-Rückgabe intakt. Vue-Bundle /app/js/souvera_shield-main.js existiert (560214 Bytes ≈547 KB) + 22 Code-Chunks. Vue-Sourcen: 9 Views (Audit, Blacklist, FileQuarantine, Overview, Quarantine, Reputation, Settings, VirusQuarantine, Whitelist), 12 Components (CopyIconButton, ListManager, MailTests, Pager, PercentBadge, QuarantineTable, ReputationDomain, ReputationReports, ReputationStats, ResultBadge, ScoreBadge, StatusBadge), 3 Services (api, i18n, router). Template main.php auf 41 Zeilen reduziert: Mount-Point <div id='souvera-shield-app'> + Loading-Fallback + Bridge-Script (readState via initial-state-souvera_shield-<key> → window.OCA.SouveraShield.flags/version/initialPage). CSS: /app/css/main.css vorhanden, /app/css/style.css und /app/js/app.js entfernt. l10n unverändert (166 keys × 4 Sprachen, pluralForm gesetzt). Versionen: info.xml=3.0.0, package.json=3.0.0. Regressions-Grep 'shield-wrapper|shield-modal|shield-navigation__item' über /app/lib /app/appinfo /app/templates /app/src → 0 Treffer.",
+  "checks_performed": {
+    "1_php_syntax_lib_appinfo": "PASS – find /app/lib /app/appinfo -name '*.php' -exec php -l → 0 Fehler (PHP 8.2.32)",
+    "2_phpunit_regression": "PASS – ./vendor/bin/phpunit -c tests/phpunit.xml → 17 tests, 38 assertions, 0 failures/0 errors. JUnit-XML: /app/test_reports/pytest/phpunit_iter6.xml. +1 Test / +5 Assertions ggü. Iter 5 (16/33 → 17/38); alle bisherigen Tests weiterhin grün.",
+    "3_pagecontroller_vue_bundle": "PASS – PageController.php:108 Util::addScript(Application::APP_ID, 'souvera_shield-main') (nicht 'app'), PageController.php:109 Util::addStyle(APP_ID, 'main'), PageController.php:112-117 IInitialState::provideInitialState('flags', [is_admin, is_souvera_admin, allow_file_quarantine, allow_virus_quarantine]), :118 provideInitialState('version', appVersion()), :119 provideInitialState('initialPage', page). Access-Checks intakt: fileQuarantine/virusQuarantine → isFeatureEnabled(...) sonst forbidden(), settings/audit → isAdmin() sonst forbidden(), dmarc → isSouveraAdmin() sonst forbidden(). forbidden() rendert core/403-Template als GUEST.",
+    "4_frontend_build_bundle": "PASS – /app/js/souvera_shield-main.js existiert (560214 Bytes = ~547 KB, im Zielbereich ~560 KB) + 22 weitere Chunks (souvera_shield-chunk-*.js). Statische Prüfung wie im Auftrag erwartet – kein Runtime-Test des Bundles (Browser-Kontext erforderlich).",
+    "5_vue_sources_present": "PASS – /app/src/main.js, /app/src/App.vue vorhanden. Services: api.js, i18n.js, router.js. Views (9): AuditView, BlacklistView, FileQuarantineView, OverviewView, QuarantineView, ReputationView, SettingsView, VirusQuarantineView, WhitelistView. Components (12): CopyIconButton, ListManager, MailTests, Pager, PercentBadge, QuarantineTable, ReputationDomain, ReputationReports, ReputationStats, ResultBadge, ScoreBadge, StatusBadge. Exakt lt. review_request. (Webpack-Build war bereits erfolgreich → syntaktische Validität implizit bestätigt.)",
+    "6_template_main_php_reduced": "PASS – /app/templates/main.php auf 41 Zeilen reduziert. Enthält: Mount-Point <div id='souvera-shield-app' data-testid='souvera-shield-app'> mit Loading-Fallback, Bridge-Script mit readState('flags'|'version'|'initialPage') via document.getElementById('initial-state-souvera_shield-'+key) → JSON.parse(atob(node.value)) → window.OCA.SouveraShield.flags/version/initialPage. CSP-Nonce korrekt gesetzt.",
+    "7_l10n_intact": "PASS – Alle 4 JSONs (de, de_DE, nl, en_GB) wohlgeformt, je 166 translations-keys, pluralForm='nplurals=2; plural=(n != 1);'. Unverändert ggü. Iter 5. Kein neuer Extract-String nötig laut Auftrag.",
+    "8_assets_css_main_and_old_removed": "PASS – /app/css/main.css existiert (713 Bytes, Mount-CSS für #souvera-shield-app). /app/css/style.css EXISTIERT NICHT MEHR. /app/js/app.js EXISTIERT NICHT MEHR. Beides bestätigt via ls (No such file or directory).",
+    "9_versions_v3_0_0": "PASS – /app/appinfo/info.xml <version>3.0.0</version>, /app/package.json \"version\": \"3.0.0\". Konsistent.",
+    "10_regression_grep_no_old_classes": "PASS – grep -rn 'shield-wrapper|shield-modal|shield-navigation__item' /app/lib /app/appinfo /app/templates /app/src → 0 Treffer. Alte Vanilla-JS-Klassen sind restlos entfernt."
+  },
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/unit/Service/MailTestServiceDiagnosticsTest.php",
+    "/app/tests/unit/Service/PMGClientTest.php",
+    "/app/tests/unit/Service/ProviderToolsClientTest.php",
+    "/app/test_reports/pytest/phpunit_iter6.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "PageController.php ist ein sauber umgesetzter Vue-SPA-Bootstrap: renderPage() zentralisiert Script/Style/InitialState + gemeinsame TemplateResponse. Jede Route liefert dasselbe 'main'-Template, nur initialPage variiert – konsistent mit vue-router-SPA-Pattern.",
+    "IInitialState statt Template-Vars: 'flags' bündelt alle 4 Feature-Flags atomar; damit vermeidet der Vue-Bundle beim Boot einen zusätzlichen API-Roundtrip für /config. Die Bridge in main.php (window.OCA.SouveraShield.flags/version/initialPage via atob+JSON.parse) ist der korrekte Standard-Pattern für Nextcloud-IInitialState-Konsumenten außerhalb von @nextcloud/initial-state.",
+    "Access-Checks bleiben serverseitig VOR dem Rendering: fileQuarantine/virusQuarantine/settings/audit/dmarc liefern forbidden() (core/403 GUEST) statt den SPA-Mount zu zeigen. Damit sind Deep-Links wasserdicht abgesichert – ein User ohne Rechte sieht nicht mal den Loading-Spinner.",
+    "appVersion() liest info.xml via simplexml_load_file mit @-Suppression + Fallback '0.0.0'. Robust; kein harter Crash bei fehlender/kaputter XML. Kleiner Verbesserungsvorschlag (nicht kritisch): das Parsing pro Request-Render wäre cachebar (z. B. via statische Property), aber bei einem einzigen Template-Response-Call ist der Overhead vernachlässigbar.",
+    "main.php-Bridge: Der atob()+JSON.parse-Fallback-Pattern schluckt Parse-Fehler still (fallback wird zurückgegeben). Das ist okay für den Boot-Case, aber wenn IInitialState einmal ein invalides Payload liefert, geht der Fehler geräuschlos unter. Für Debugging könnte man in dev-mode ein console.warn ergänzen – aber production-safe ist der aktuelle Code."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "n/a (übersprungen laut Auftrag – testing_type='backend only(skip frontend)')"
+  },
+  "test_credentials": "n/a – keine Auth/HTTP-Tests; ausschließlich statische Prüfung + PHPUnit + Datei-Inventur.",
+  "seed_data_creation": "keine",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Nextcloud-PHP-App souvera_shield v3.0.0 – Vue-3-SPA-Frontend, PHP-Backend 1:1 zu v2.4.1. KEIN FastAPI/React, KEINE HTTP-Backend-URL. Standard-Test-Flow: (1) find /app/lib /app/appinfo -name '*.php' -exec php -l, (2) cd /app && ./vendor/bin/phpunit -c tests/phpunit.xml (aktuell 17/38 grün), (3) ls -l /app/js/souvera_shield-main.js (~560 KB Ziel), (4) grep 'addScript' /app/lib/Controller/PageController.php muss 'souvera_shield-main' zeigen (nicht 'app'), (5) ls /app/css/main.css muss existieren, /app/css/style.css + /app/js/app.js dürfen NICHT existieren, (6) grep 'shield-wrapper|shield-modal|shield-navigation__item' über lib/appinfo/templates/src muss 0 sein, (7) Versions-Check: info.xml + package.json = 3.0.0. Wichtige Interpretations-Reihenfolge in MailTestService::interpretMailerFailure(): 535/auth ZUERST, dann 5.7.x/5.1.x-Regex – NICHT umsortieren. Vue-Bundle NICHT zur Laufzeit ausführen (Browser-Kontext erforderlich, node kann kein browser-Bundle laden – node-stream-Warning beim Build vom @nextcloud/files XML-Parser ist harmlos).",
+  "rca of the issue": "n/a – keine Bugs. Der v3.0.0-Umbau ist backend-seitig sauber: nur PageController.php und templates/main.php wurden angefasst, alle Controller/Services/Models sonst unverändert, PHPUnit-Regression 17/38 grün, keine Referenzen mehr auf alte Vanilla-JS-Klassen. Vue-SPA-Mount + IInitialState-Bridge + Server-Side Access-Checks korrekt implementiert."
+}

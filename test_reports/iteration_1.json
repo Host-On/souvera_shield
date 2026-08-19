@@ -1,0 +1,48 @@
+{
+  "summary": "Static code review of Souvera Shield Nextcloud app v2.3.1. No PHP/Nextcloud runtime available in sandbox — verified all acceptance criteria via source inspection (routes.php ↔ DmarcController match, template ↔ CSS class match, JS data-label ↔ CSS ::before rule, and absence of removed methods/routes/handlers). All 15 acceptance criteria are met. Only two very minor code-smell observations found; no blockers.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/app/lib/Db/DmarcDomainMapper.php", "issue": "Method findActive() (line 36) is still defined but no longer referenced from any controller/service/job. Dead code — can be safely deleted (leftover from the multi-domain era)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/app/css/style.css", "issues": ["The class .shield-table__col-action is declared twice (line 235 and line 285-288). Both rules are consistent (width:1%; white-space:nowrap) so it is not user-visible, but one of the two declarations should be removed to satisfy DRY. Task explicitly asked about the .shield-table__col-check duplicate which IS fixed (only line 236 remains)."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "OPTIONAL: Remove the duplicate .shield-table__col-action rule at /app/css/style.css lines 285-288 (line 235 already carries the same declaration).",
+    "OPTIONAL: Delete the now-unused DmarcDomainMapper::findActive() method (/app/lib/Db/DmarcDomainMapper.php line 36) since the reputation refactor no longer iterates over multiple domains."
+  ],
+  "critical_code_review_comments": [
+    "TABLE BUG FIX #1 PASS: Every <th> in /app/templates/main.php carries a shield-table__col-* class — Recent (lines 107-110), Spam/File/Virus quarantine (lines 153-159), Whitelist/Blacklist (lines 198-201), Audit log (lines 219-222), Reputation mail-test (lines 283-290).",
+    "TABLE BUG FIX #2 PASS: /app/css/style.css @media (max-width:640px) block at lines 539-606 implements the card-style layout via .shield-table--stackable (thead hidden absolute -9999px, tr becomes bordered card, td becomes flex with ::before content:attr(data-label)). All 6 data-tables in main.php carry 'shield-table shield-table--stackable'.",
+    "TABLE BUG FIX #3 PASS: data-label is set on every <td> in renderQuarantineRows (js:511-514), renderEntryRows (js:539-541), loadAudit renderer (js:464-467) and renderMailTests (js:771-778). Labels match the column headers.",
+    "TABLE BUG FIX #4 PASS: Duplicate .shield-table__col-check is gone (single declaration at line 236). Old @media (max-width:720px) no longer references classes that don't exist. Minor leftover: .shield-table__col-action duplicated (both consistent — non-fatal).",
+    "TABLE BUG FIX #5 PASS: grep 'sticky' on style.css returned no matches — .shield-table thead th (lines 268-275) no longer uses position:sticky.",
+    "REPUTATION REFACTOR #1 PASS: /app/templates/main.php line 37 labels the dmarc nav entry 'Reputation' (was 'DMARC & Mail test').",
+    "REPUTATION REFACTOR #2 PASS: $page==='dmarc' block (main.php 231-297) contains NO 'Add domain' button, NO per-row DMARC/Run buttons, NO input[type=checkbox][data-dmarc-toggle], NO multi-domain table.",
+    "REPUTATION REFACTOR #3 PASS: Three <section> elements — shield-reputation (intro + provider status banner), shield-reputation-dmarc (rep-card + 'Re-check now'), shield-reputation-mailtest ('Run mail test now' + history table).",
+    "REPUTATION REFACTOR #4 PASS: /app/appinfo/routes.php exposes /api/dmarc/status (GET), /api/dmarc/domain (GET), /api/dmarc/domain/check (POST), /api/dmarc/domain/test (POST), /api/dmarc/tests (GET), /api/dmarc/tests/{testId}/refresh (POST). No listDomains/addDomain/updateDomain/deleteDomain routes.",
+    "REPUTATION REFACTOR #5 PASS: DmarcController has exactly the required 7 public methods (constructor + status + domain + checkDmarc + listTests + triggerTest + refreshTest). No listDomains/addDomain/updateDomain/deleteDomain remain. Domain always resolved via ManagedDomainService::getOrCreate().",
+    "REPUTATION REFACTOR #6 PASS: ManagedDomainService::getDomainName() reads app-config provider_tools_domain first, falls back to PMGClient::getPrimaryDomain(). Sender resolved from provider_tools_sender or postmaster@<domain>. No UI path can override this.",
+    "REPUTATION REFACTOR #7 PASS: WeeklyMailTestJob::run() calls $this->managed->getOrCreate() and returns early if it is null. No DmarcDomainMapper::findActive() iteration anywhere.",
+    "REPUTATION REFACTOR #8 PASS: SetProviderToolsTokenCommand::configure() registers --token / --base-url / --domain / --sender / --clear (lines 42-46) and execute() persists each option to app-config with strtolower on --domain.",
+    "REPUTATION REFACTOR #9 PASS: loadDmarc calls /api/dmarc/status, /api/dmarc/domain, /api/dmarc/tests. Handlers: handleDmarcRecheck (POST /api/dmarc/domain/check), handleMailtestRunNow (POST /api/dmarc/domain/test), handleMailtestAction ('refresh' or 'details'). Delegated click listener matches [data-action=\"dmarc-recheck\"], [data-action=\"mailtest-run-now\"], [data-mailtest-action]. Grep for loadDmarcDomains / switchDmarcTab / handleDmarcAddDomain / handleDmarcToggle / data-dmarc-toggle / data-dmarc-action / dmarc/domains returned zero matches across js/php/templates.",
+    "REPUTATION REFACTOR #10 PASS: /app/appinfo/info.xml <version>2.3.1</version>. /app/templates/main.php footer shows 'v2.3.1' (line 325).",
+    "DOCUMENTATION PASS: /tmp/bookstack_v231.py exists (9.7 KB), targets HANDBOOK_PAGE_ID=91 (rewrites '12. Reputation Management') and CHANGELOG_PAGE_ID=75 (prepends v2.3.1 block with <h3>Geändert</h3> and <h3>Behoben</h3>). Cannot verify BookStack API call — that runs on the user's side."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (static review — all criteria met)", "frontend": "100% (static review — all criteria met)"},
+  "test_credentials": "N/A — static review only, no runtime available.",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "This is a Nextcloud PHP app; the sandbox has neither PHP CLI nor a running Nextcloud, so all testing must be static. Live testing happens on the user's Nextcloud 34 instance after deployment. All source paths follow OCP\\SouveraShield namespace under /app/lib/. Two optional cleanups noted (duplicate .shield-table__col-action CSS rule and unused DmarcDomainMapper::findActive method) — neither blocks release of v2.3.1.",
+  "rca of the issue": "Original bug: table columns had no explicit width so `table-layout: fixed` could not distribute space, producing cramped layouts. Fix: (1) added shield-table__col-* modifier classes on every <th> in main.php with concrete widths in style.css; (2) added .shield-table--stackable modifier + @media(max-width:640px) card layout using td::before { content:attr(data-label) }; (3) JS renderers set data-label on every <td> so the ::before rule shows column labels on mobile; (4) removed the sticky-header rule that caused theme artifacts. Structural refactor: replaced multi-domain UI with a single configuration-sourced managed domain (ManagedDomainService), so users cannot pick the domain — it comes from app-config `provider_tools_domain` or PMG's first allowed domain."
+}

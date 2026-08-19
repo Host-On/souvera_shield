@@ -1,0 +1,34 @@
+{
+  "summary": "Souvera Shield v3.1.0 – statische Prüfung + PHPUnit + Datei-/Bundle-Inventur. Alle 9 Akzeptanzkriterien erfüllt. Backend (lib/) unverändert ggü. v3.0.0, PHPUnit 17/17 grün, Frontend-Build enthält chart.js in lazy-Chunk 199, neue Vue-Komponente ReputationCharts.vue vollständig, days-State auf View-Ebene refaktoriert, alle 4 Locales auf 171 Keys inkl. der 5 neuen Chart-Keys.",
+  "checks_performed": {
+    "php_syntax_lib_appinfo": "PASS – find /app/lib /app/appinfo -name '*.php' -exec php -l {} \\;  →  0 Fehler (34 PHP-Dateien geprüft, PHP 8.2.32)",
+    "phpunit": "PASS – ./vendor/bin/phpunit -c tests/phpunit.xml → OK (17 tests, 38 assertions), Zeit 0.013 s, keine Regression ggü. v3.0.0",
+    "frontend_build_main_js": "PASS – /app/js/souvera_shield-main.js existiert (560 223 Bytes, mtime Jul 8 18:02)",
+    "chart_js_lazy_chunk": "PASS – chart.js in lazy-Chunk sichtbar: js/souvera_shield-chunk-199.js (~176 KB) enthält chart.js-interne Symbole (_chartjs, getChart, chartArea, chartOptionScopes, wOnChartArea, inChartArea). Wrapper-Chunk-790.js referenziert 'ChartLine' + 'ionCharts' (= ReputationCharts). BarElement/LineElement/PointElement selbst tauchen als Strings nicht auf, da chart.js in der Production-Build-Minifizierung die Klassennamen manglet – erwartetes Verhalten.",
+    "reputation_charts_vue": "PASS – /app/src/components/ReputationCharts.vue enthält: (a) import { Bar, Line } from 'vue-chartjs' (Zeile 43), (b) ChartJS.register(BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler) (Zeile 63), (c) async fetchAllReports() mit page/limit-Pagination + days-Cutoff (Zeile 236), (d) bucketByDay(reports) das nach dateRangeBegin gruppiert (Zeile 270). <Bar> + <Line> im Template mit data-testid reputation-chart-messages / reputation-chart-passrate.",
+    "reputation_view_refactor": "PASS – /app/src/views/ReputationView.vue: data() { days: 30 }, ranges [7,30,90] mit Segmented-Buttons oberhalb (Zeilen 27-32, data-testid=reputation-stats-range-*), <ReputationStats :days=\"days\" /> + <ReputationCharts :days=\"days\" /> (Zeilen 38-39). days-State liegt eindeutig im View.",
+    "reputation_stats_days_prop": "PASS – /app/src/components/ReputationStats.vue: props: { days: { type: Number, default: 30 } } (Zeile 88), watch: { days: { immediate: true, handler ... } } (Zeilen 111-113), API-Call nutzt this.days (Zeile 124). Kein lokaler days-State mehr.",
+    "package_json_version": "PASS – package.json version 3.1.0, chart.js ^4.4.7 + vue-chartjs ^5.3.2 als dependencies (Zeilen 17,19).",
+    "info_xml_version": "PASS – appinfo/info.xml <version>3.1.0</version> (Zeile 28).",
+    "l10n_json_keys": "PASS – alle 4 Locales exakt 171 Keys: de.json=171, de_DE.json=171, nl.json=171, en_GB.json=171.",
+    "l10n_js_keys": "PASS – alle 4 .js-Locales enthalten je 171 ':'-Zeilen (Übersetzungsmap-Einträge).",
+    "l10n_new_chart_keys": "PASS – alle 5 neuen Keys in allen 4 .json-Locales gefunden: 'Timeline' (4/4), 'Messages per day' (4/4), 'Pass rate over time' (4/4), 'Daily volume' (4/4), 'Not enough report data' (4/4).",
+    "regression_grep_vanilla_classes": "PASS – grep -rn 'shield-wrapper|shield-modal|shield-navigation__item' /app/lib /app/appinfo /app/templates /app/src → 0 Treffer.",
+    "backend_unchanged": "PASS – find /app/lib -name '*.php' -newer /app/appinfo/info.xml → keine Datei; alle 34 PHP-Dateien in lib/ sind älter/gleich als info.xml (letzte Modifikation von info.xml jedoch aus v3.1.0-Iteration, daher Indikator eher schwach). Kein Anzeichen von Backend-Änderungen sichtbar."
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/tests/phpunit.xml", "/app/src/components/ReputationCharts.vue", "/app/src/views/ReputationView.vue", "/app/src/components/ReputationStats.vue"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "chart.js-Chunk (199) ist ~176 KB unminifiziert – für Nextcloud-Apps akzeptabel, aber Klassennamen sind gemangled → BarElement/LineElement als Klartext-String nicht auffindbar. Wenn ein Reviewer visuell prüfen möchte, empfiehlt sich ein source-map-explorer-Run oder ein dev-build-Test.",
+    "ReputationCharts.vue nutzt clientseitige Aggregation über fetchAllReports() – bei sehr großen Zeiträumen (90d) potentiell viele API-Requests. Server-seitige Aggregations-Endpoint könnte in v3.2 hinzugefügt werden (kein Blocker).",
+    "watch: { days: { immediate: true } } in Stats & Charts ist konsistent – gut."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "n/a (nur statische Prüfung, kein Runtime-Test angefordert)"},
+  "seed_data_creation": "keine",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "v3.1.0 rein statisch verifiziert (PHP-Lint, PHPUnit, Bundle-Inventur, l10n-Keys, Grep-Regression). Kein Browser-/Runtime-Test durchgeführt (bewusst, laut Auftrag). Falls in Folge-Iteration Runtime-Test verlangt wird: Nextcloud-Instanz nötig, um ReputationView tatsächlich im Browser zu öffnen und lazy-Chunk-Load + Chart-Rendering zu beobachten."
+}

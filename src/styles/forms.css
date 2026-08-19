@@ -1,0 +1,177 @@
+/*
+ * Souvera Design System – Design Tokens (SOUVERA_DESIGN_SYSTEM.md §5).
+ *
+ * Every Souvera app inherits the same control heights, radii, spacings and
+ * focus rings from these variables so the whole ecosystem looks like one
+ * product. All colours resolve to Nextcloud theme variables → automatic
+ * light/dark and hoster theming support.
+ *
+ * DO NOT add hard-coded colours. Reference the NC variables in the
+ * `--color-*` family instead.
+ */
+
+:root {
+    /* Controls (buttons, inputs) */
+    --sc-control-height:        44px;
+    --sc-control-padding-x:     16px;
+    --sc-control-padding-y:     10px;
+    --sc-control-radius:        var(--border-radius-large, 12px);
+    --sc-control-border-width:  1.5px;
+
+    /* Spacing scale */
+    --sc-field-gap:             24px;   /* between form fields */
+    --sc-section-gap:           40px;   /* between page sections */
+
+    /* Focus */
+    --sc-focus-ring: 0 0 0 3px rgba(var(--color-primary-element-rgb, 0, 130, 201), 0.25);
+}
+
+/* Body text baseline in shell */
+.souvera-content {
+    width: 100%;
+    min-height: 100%;
+    box-sizing: border-box;
+    padding: 24px 32px 48px;
+    color: var(--color-main-text);
+}
+
+/* Article-style prose stays comfortable to read */
+.souvera-content .prose,
+.souvera-content .section__lead {
+    max-width: 820px;
+    line-height: 1.6;
+}
+
+/* Never underline navigation links */
+:deep(.app-navigation-entry-link),
+:deep(.app-navigation-entry__title),
+:deep(.app-navigation a) {
+    text-decoration: none;
+}
+
+/* Page & section headings */
+.souvera-heading-1 {
+    font-size: 1.7rem;
+    font-weight: var(--font-weight-heading, 700);
+    color: var(--color-main-text);
+    margin: 0 0 8px;
+}
+.souvera-heading-2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--color-main-text);
+    margin: 0 0 4px;
+}
+.souvera-section__sub {
+    color: var(--color-text-maxcontrast);
+    margin: 0 0 var(--sc-field-gap);
+    font-size: .95rem;
+}
+
+/* Section grid – used everywhere by the *View.vue files */
+.souvera-section {
+    margin-bottom: var(--sc-section-gap);
+}
+.souvera-section__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.souvera-section__actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Card container reused by dashboards and setup panels */
+.souvera-card {
+    border: 1px solid var(--color-border, var(--color-background-dark));
+    border-radius: var(--border-radius-large, 12px);
+    background: var(--color-main-background);
+    padding: 20px 24px;
+}
+.souvera-card + .souvera-card { margin-top: 16px; }
+
+/* Statistic tiles */
+.souvera-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: var(--sc-field-gap);
+}
+.souvera-stat {
+    background: var(--color-main-background);
+    border: 1px solid var(--color-border, var(--color-background-dark));
+    border-radius: var(--border-radius-large, 12px);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.souvera-stat__label {
+    color: var(--color-text-maxcontrast);
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.souvera-stat__value {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--color-main-text);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Badges (traffic-light chips reused by DKIM/SPF/DMARC status).
+ *
+ * v3.4.1: explicit HSL values, NOT NC's CSS-variables. Nextcloud's
+ * `--color-success/warning/error` are pastel in the light theme, which
+ * makes white-on-pastel unreadable. We now use solid saturated colours
+ * with white text for the coloured variants, and give the neutral
+ * variant a defined light-grey background as well. Also add a subtle
+ * border for extra edge definition in high-contrast themes.
+ */
+.souvera-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 12px;
+    border-radius: var(--border-radius-pill, 999px);
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    line-height: 1.2;
+    background: hsl(215, 16%, 88%);
+    color: hsl(215, 25%, 20%);
+    border: 1px solid transparent;
+}
+.souvera-badge--ok   {
+    background: hsl(142, 71%, 36%);   /* solid green  */
+    color: #ffffff;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, .18);
+}
+.souvera-badge--warn {
+    background: hsl( 32, 88%, 42%);   /* solid amber  */
+    color: #ffffff;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, .18);
+}
+.souvera-badge--err  {
+    background: hsl(  0, 72%, 47%);   /* solid red    */
+    color: #ffffff;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, .18);
+}
+
+/* Dark mode: same hues, a touch lighter so they stay saturated but not glaring. */
+@media (prefers-color-scheme: dark) {
+    .souvera-badge {
+        background: hsl(215, 14%, 26%);
+        color: hsl(215, 15%, 92%);
+    }
+    .souvera-badge--ok   { background: hsl(142, 60%, 40%); }
+    .souvera-badge--warn { background: hsl( 32, 78%, 46%); }
+    .souvera-badge--err  { background: hsl(  0, 64%, 50%); }
+}
+
+.souvera-muted { color: var(--color-text-maxcontrast); }

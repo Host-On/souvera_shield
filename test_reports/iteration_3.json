@@ -1,0 +1,44 @@
+{
+  "summary": "Backend-only Verifikation des Provider-Tools-Token-Refactorings (PHP Nextcloud-App, kein FastAPI/React). Alle geforderten statischen und PHPUnit-Prüfungen sind GRÜN.",
+  "checks_performed": {
+    "php_syntax_lib": "PASS – find /app/lib -name '*.php' -exec php -l → keine Fehler",
+    "php_syntax_appinfo": "PASS – find /app/appinfo -name '*.php' -exec php -l → keine Fehler",
+    "phpunit": "PASS – ./vendor/bin/phpunit -c tests/phpunit.xml → 11 Tests, 23 Assertions, 0 Failures, 0 Errors (PHPUnit 10.5.63 / PHP 8.2.32). ProviderToolsClientTest ist Teil der Suite und enthält u.a. testIsConfiguredReturnsFalseWhenCentralIsNotInstalled, testCheckDmarcThrowsWithClearMessageWhenCentralMissing (Message 'provider.tools token is not configured in Souvera Central'), testCreateMailTestThrowsWithClearMessageWhenCentralMissing (Hinweis 'occ souvera:provider-token:set') und testDefaultBaseUrlIsUsedWhenNoOverride.",
+    "grep_SetProviderToolsTokenCommand": "PASS – Kein Treffer im Code. Der einzige Fund ist in /app/test_reports/iteration_1.json (historischer Report – nicht im Repo-Code) und liegt damit außerhalb des Refactor-Scopes.",
+    "grep_ProviderToolsClient_ENCRYPTION_PREFIX": "PASS – Kein Treffer für ProviderToolsClient::ENCRYPTION_PREFIX. Die übrigen ENCRYPTION_PREFIX-Treffer betreffen ausschließlich die davon unabhängige Konstante PMGClient::ENCRYPTION_PREFIX (v2$-Prefix für die PMG-Passwort-Verschlüsselung) und sind erwartungsgemäß erhalten.",
+    "grep_provider_tools_token": "PASS – 0 Treffer im gesamten Repo (außerhalb vendor/.git/memory).",
+    "file_deletion_SetProviderToolsTokenCommand_php": "PASS – /app/lib/Command/SetProviderToolsTokenCommand.php existiert nicht mehr; /app/lib/Command/ enthält nur noch SetCredentialsCommand.php.",
+    "info_xml": "PASS – Version 2.3.3 gesetzt (Zeile 28). <commands> enthält NUR noch <command>OCA\\SouveraShield\\Command\\SetCredentialsCommand</command> (Zeile 59); kein SetProviderToolsTokenCommand mehr.",
+    "register_command_php": "PASS – Registriert ausschließlich SetCredentialsCommand::class via \\OCP\\Server::get().",
+    "ProviderToolsClient_php": "PASS – Konstruktor-Signatur (IAppConfig, IClientService, LoggerInterface, IAppManager) korrekt; ICrypto und ENCRYPTION_PREFIX vollständig entfernt. readToken() prüft IAppManager::isInstalled('souvera_central'), holt Service via \\OCP\\Server::get('OCA\\\\SouveraCentral\\\\Service\\\\ProviderTokenService') mit try/catch auf Resolve und getToken(); Fallback-Fehlermeldung in authHeaders() nennt exakt 'provider.tools token is not configured in Souvera Central' + 'occ souvera:provider-token:set --stdin'.",
+    "templates_main_php_footer": "PASS – Zeile 325: <span class=\"shield-footer__version\" data-testid=\"shield-version\">v2.3.3</span>."
+  },
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/unit/Service/ProviderToolsClientTest.php",
+    "/app/tests/unit/Service/PMGClientTest.php",
+    "/app/tests/phpunit.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "ProviderToolsClient::readToken() nutzt \\OCP\\Server::get() als statischen Service-Locator. Das ist für Late-Binding auf souvera_central pragmatisch (Central kann fehlen), verhindert aber echtes DI-Mocking – der Unit-Test kompensiert das explizit über den IAppManager-Guard. Kein Bug, aber dokumentiert im Test-Docblock.",
+    "In der Ausnahme-Message in authHeaders() steht 'occ souvera:provider-token:set --stdin', während die Testerwartung nur den Substring 'occ souvera:provider-token:set' matcht – konsistent. Nur zur Info: In README/UI-Hinweisen sollte dieselbe Schreibweise verwendet werden, damit Nutzer den Befehl 1:1 kopieren können.",
+    "info.xml deklariert php min-version 8.1, das Problem-Statement nennt PHP 8.2. Im Container läuft 8.2.32 – kompatibel. Nur Hinweis, falls die 8.1-Untergrenze bewusst breiter gelassen wurde."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "n/a (übersprungen laut Auftrag)"},
+  "test_credentials": "n/a – keine Auth/HTTP-Tests erforderlich; ausschließlich statische Prüfung + PHPUnit.",
+  "seed_data_creation": "keine",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Dies ist eine Nextcloud-PHP-App (souvera_shield) ohne laufenden HTTP-Backend-Server. Verifikation läuft über: (1) php -l für lib/ + appinfo/, (2) ./vendor/bin/phpunit -c tests/phpunit.xml (aktuell 11 Tests grün), (3) grep-basierte Regressionschecks. Der provider.tools-Token wird ausschließlich zentral über souvera_central bezogen; Shield persistiert nichts mehr lokal. Frontend wird nicht getestet.",
+  "rca of the issue": "n/a – kein Bug reproduziert. Refactor-Ziel wurde vollständig erreicht."
+}

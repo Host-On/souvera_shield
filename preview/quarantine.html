@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Souvera Shield – Quarantine Preview (Bulk + Search)</title>
+<link rel="stylesheet" href="/style-preview.css">
+<style>
+.shield-bulkbar{display:flex;align-items:center;gap:8px;padding:10px 14px;margin-bottom:12px;background:var(--color-primary-element-light);color:var(--color-primary-element-light-text);border-radius:8px;font-weight:600;}
+.shield-bulkbar__label{flex:1;}
+.shield-bulkbar__btn--danger{background:var(--color-error);border-color:var(--color-error);color:#fff;}
+.shield-search-input{padding:8px 12px;min-width:220px;border-radius:8px;border:1px solid var(--color-border-dark);background:var(--color-main-background);color:var(--color-main-text);}
+.shield-section__actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.shield-table__col-check{width:1%;}
+.shield-table__col-check input{width:18px;height:18px;accent-color:var(--color-primary-element);}
+</style>
+</head>
+<body>
+
+<header class="nc-header">
+    <div class="nc-header__logo"><div class="nc-header__logo-icon">☁</div><span>Nextcloud</span></div>
+    <nav class="nc-header__apps">
+        <a>📁</a><a>✉️</a><a class="is-active">🛡️</a><a>📅</a><a>💬</a>
+    </nav>
+    <div class="nc-header__user">JD</div>
+</header>
+
+<div class="nc-body">
+    <nav id="app-navigation">
+        <ul class="app-navigation__list">
+            <li class="app-navigation-entry"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">📊</span><span class="app-navigation-entry__title">Übersicht</span></a></li>
+            <li class="app-navigation-entry active"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">📧</span><span class="app-navigation-entry__title">Spam-Quarantäne</span></a></li>
+            <li class="app-navigation-entry"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">📎</span><span class="app-navigation-entry__title">Datei-Quarantäne</span></a></li>
+            <li class="app-navigation-entry"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">⚠</span><span class="app-navigation-entry__title">Virus-Quarantäne</span></a></li>
+            <li class="app-navigation-entry"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">✓</span><span class="app-navigation-entry__title">Whitelist</span></a></li>
+            <li class="app-navigation-entry"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">✕</span><span class="app-navigation-entry__title">Blacklist</span></a></li>
+            <li class="app-navigation-entry"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">📜</span><span class="app-navigation-entry__title">Audit-Log</span></a></li>
+            <li class="app-navigation-entry"><a class="app-navigation-entry-link"><span class="app-navigation-entry-icon">⚙</span><span class="app-navigation-entry__title">Einstellungen</span></a></li>
+        </ul>
+    </nav>
+
+    <main id="app-content">
+        <div class="shield-wrapper">
+            <section class="shield-section">
+                <header class="shield-section__header shield-section__header--with-action">
+                    <div>
+                        <h2>Spam-Quarantäne</h2>
+                        <p class="shield-section__sub">Vom Spam-Filter markierte Nachrichten, die zur Prüfung zurückgehalten wurden.</p>
+                    </div>
+                    <div class="shield-section__actions">
+                        <input type="search" class="shield-search-input" placeholder="Suchen…" value="phish">
+                        <a class="button">📥 Als CSV exportieren</a>
+                    </div>
+                </header>
+
+                <div class="shield-bulkbar">
+                    <span class="shield-bulkbar__label">2 ausgewählt</span>
+                    <button class="button shield-bulkbar__btn">Auswahl freigeben</button>
+                    <button class="button shield-bulkbar__btn shield-bulkbar__btn--danger">Auswahl löschen</button>
+                </div>
+
+                <div class="shield-table-wrap">
+                    <table class="shield-table">
+                        <thead><tr>
+                            <th class="shield-table__col-check"><input type="checkbox"></th>
+                            <th>Empfangen</th><th>Absender</th><th>Betreff</th><th class="shield-table__col-action">Aktion</th>
+                        </tr></thead>
+                        <tbody>
+                            <tr><td class="shield-table__col-check"><input type="checkbox" checked></td><td>22.01.2026, 13:55</td><td>support@phish-bank.test</td><td>Verifizieren Sie Ihr Konto</td>
+                                <td class="shield-table__col-action">
+                                    <button class="shield-action">Vorschau</button>
+                                    <button class="shield-action">Freigeben</button>
+                                    <button class="shield-action shield-action--danger">Löschen</button>
+                                </td></tr>
+                            <tr><td class="shield-table__col-check"><input type="checkbox" checked></td><td>22.01.2026, 11:03</td><td>noreply@phishing-newsletter.example</td><td>Phishing-Versuch erkannt</td>
+                                <td class="shield-table__col-action">
+                                    <button class="shield-action">Vorschau</button>
+                                    <button class="shield-action">Freigeben</button>
+                                    <button class="shield-action shield-action--danger">Löschen</button>
+                                </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<div class="preview-switch">
+    <button id="btn-light" class="is-active">☀ Light</button>
+    <button id="btn-dark">🌙 Dark</button>
+</div>
+<script>
+    const root = document.documentElement;
+    document.getElementById('btn-light').onclick = () => { root.dataset.theme = 'light'; toggle('light'); };
+    document.getElementById('btn-dark').onclick = () => { root.dataset.theme = 'dark'; toggle('dark'); };
+    function toggle(m){ document.getElementById('btn-light').classList.toggle('is-active', m==='light'); document.getElementById('btn-dark').classList.toggle('is-active', m==='dark'); }
+</script>
+</body>
+</html>

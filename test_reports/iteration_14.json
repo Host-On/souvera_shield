@@ -1,0 +1,38 @@
+{
+  "summary": "v3.3.4 Backend-Only Testing komplett grün. PHPUnit-Suite: 46/46 Tests, 134 Assertions (Ziel-Zahlen aus review_request exakt getroffen). Neue TestClasses: StalwartAdminClientTest (6 Cases), MailTestPrincipalStoreTest (5 Cases), MailTestRelayConfigTest (11 Cases, rewritten), MailTestServiceDiagnosticsTest (9 Cases, rewritten). Alle P0-Features der Auto-Provisioning-Architektur bestätigt: (1) StalwartAdminClient::hasPrincipal → 200 true, 404 false, 400 false, sonstige Errors → MailTestRelayException STAGE_AUTH; (2) StalwartAdminClient::createIndividualPrincipal serialisiert JSON mit type=individual, name, emails[], secrets[bcrypt-hash] und ruft POST /api/principal mit Basic-Auth {adminUser, adminPassword} + verify=false; password_verify auf secrets[0] grün; (3) MailTestPrincipalStore Cold-Path (cache leer → hasPrincipal → createIndividualPrincipal → cache mit ICrypto::encrypt füllen), Hot-Path (cache-hit → decrypt → return, keine API-Calls), Decrypt-Fehler → fallback auf provisioning, reprovision() wipet cache und provisioniert unbedingt neu, Kollision (hasPrincipal=true) → unique fallback name shield-mailtest-<hex6>@<domain>; (4) MailTestRelayConfig-Refactor: Felder smtpHost/smtpPort/apiUrl/adminUser/adminPassword, Default-Port 465, usesImplicitTls Port-465-only, apiUrl trailing-slash-stripped; (5) SmtpMailTestRelay::send neue Signatur (config, smtpAuthUser, smtpAuthPassword, fromAddress, to, fromDisplay, subject, plainBody) – AUTH LOGIN nutzt jetzt $smtpAuthUser/$smtpAuthPassword; (6) MailTestService-Konstruktor injectet MailTestPrincipalStore; dispatchEmail ruft principals->getOrProvision und übergibt Creds an relay->send; bei STAGE_AUTH → einmalig reprovision + Retry; (7) interpretMailerFailure STAGE_AUTH-Text erwähnt Send-Principal + Management-API + admin-User als API-Klient, STAGE_FROM erwähnt 'obwohl dies der eigene Send-Principal ist', STAGE_RCPT erwähnt outgoing-mail-Rolle. Regressions grün: reflection_check.php OK, l10n_di_check.php OK. Version 3.3.4 in appinfo/info.xml. PHP-Lint sauber für alle 5 geänderten/neuen Service-Files und 4 Test-Files. Die alte v332-Reflection-Datei ist entfernt wie in agent_to_agent_context_note beschrieben – PHPUnit-Coverage reicht.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/unit/Service/StalwartAdminClientTest.php",
+    "/app/tests/unit/Service/MailTestPrincipalStoreTest.php",
+    "/app/tests/unit/Service/MailTestRelayConfigTest.php",
+    "/app/tests/unit/Service/MailTestServiceDiagnosticsTest.php",
+    "/app/tests/reflection_check.php",
+    "/app/tests/l10n_di_check.php",
+    "/app/test_reports/pytest/phpunit_v334_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "MailTestPrincipalStore::provision() verwendet bei Kollision 'shield-mailtest-<hex6>@domain' als Fallback-Namen und macht KEIN zweites hasPrincipal()-Check auf den neu generierten Namen. Wahrscheinlichkeit einer weiteren Kollision ist 1 zu ~16 Mio., aber theoretisch möglich. Nicht funktionsrelevant, aber eine Retry-Schleife (max 3) wäre defensiv.",
+    "StalwartAdminClient::statusFromException() parst den HTTP-Statuscode notfalls per Regex aus der Fehlermeldung ('/\\b([1-5]\\d{2})\\b/'). Wenn die Server-Antwort im Fehlertext eine unrelated 3-stellige Zahl im 100–599-Bereich enthält (z.B. Port '500' o.ä.), könnte das zu false negatives beim 404-Handling führen. In der Praxis unwahrscheinlich, weil OCP\\Http\\Client\\IClient bei Guzzle den Code direkt via getCode() setzt; der Regex-Fallback ist nur ein safety-net. OK.",
+    "MailTestPrincipalStore::getOrProvision() dekodiert den Domain-Teil des Emails via strtolower($domain), aber führt keine Validierung durch (leere Domain, Whitespace, illegale Zeichen). Bei fehlerhaftem Input (z.B. leere Domain aus DB) würde 'shield-mailtest@' erzeugt und Stalwart würde 400 zurückgeben. Aufrufer MailTestService::dispatchEmail bekommt $domain->getDomain() aus einer DmarcDomain-Entity, die vermutlich validiert ist – aber ein defensives assert wäre nice-to-have.",
+    "MailTestService::dispatchEmail() Retry-Pfad (STAGE_AUTH → reprovision + Retry) fängt nur MailTestRelayException. Falls die Reprovisioning-API selbst 500 wirft und MailTestRelayException-STAGE_AUTH liefert, geht das in den 'catch (MailTestRelayException $e2)' und wird via interpretMailerFailure ausgegeben – aber das könnte den Operator irritieren, weil die Fehlermeldung dann zweimal STAGE_AUTH nennt. Nicht kritisch, Retry-Verhalten ist per Design idempotent.",
+    "StalwartAdminClient::createIndividualPrincipal() ruft $this->http->post ohne die Response zu prüfen. Falls Stalwart bei einem 200 statt 201 antwortet oder mit einem Fehler-Body im JSON (Stalwart-Konvention nicht klar), würde das als Erfolg gewertet. Aktuelle Tests decken nur den Happy-Path (201) und Exception-Path ab. Sollte Stalwart je 2xx mit Fehler-Payload liefern, wäre eine Body-Validierung sinnvoll.",
+    "SmtpMailTestRelay::send() Signatur hat jetzt 8 Parameter – die Reihenfolge ist mit Named-Args in MailTestService::dispatchEmail() klar, aber ein Value-Object (z.B. MailTestSendRequest) wäre ergonomischer und weniger fehleranfällig bei zukünftigen Erweiterungen. Kein Blocker."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "n/a (skipped)"},
+  "test_credentials": "n/a (Nextcloud PHP-App, kein HTTP-Testing im Pod)",
+  "seed_data_creation": "keine",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "v3.3.4 ist 100% grün. PHPUnit-Suite: 46 Tests / 134 Assertions. Neue Klassen: StalwartAdminClient (Stalwart Management-API Client) und MailTestPrincipalStore (auto-provisioning + cache). MailTestRelayConfig ist refaktoriert: smtpHost/smtpPort/apiUrl/adminUser/adminPassword; usesImplicitTls() ist Port-465-only. SmtpMailTestRelay::send() hat 8 Parameter mit smtpAuthUser/smtpAuthPassword per-send. MailTestService::dispatchEmail() implementiert Auto-Reprovisioning bei STAGE_AUTH. Bei nächster Iteration darauf achten: (1) Keine Downgrade der Signatur; (2) Reprovision-Retry-Verhalten weiter idempotent; (3) Bcrypt-Hash immer via password_hash(..., PASSWORD_BCRYPT). Der alte v332-Reflection-Check ist bereits entfernt.",
+  "rca of the issue": "n/a – keine Bugs gefunden. Alle in review_request genannten P0-Features und Regressions-Prüfungen bestätigt: PHPUnit 46/46 (134 assertions, exakt wie erwartet), reflection_check.php OK, l10n_di_check.php OK, PHP-Lint OK für alle 9 relevanten Files, Version 3.3.4 verifiziert. Die v3.3.4 Auto-Provisioning-Architektur (dedizierter shield-mailtest@<domain> Send-Principal via Stalwart Management-API, mit encrypted-cached Plain-Passwort in IAppConfig) ist implementiert und getestet wie in der review_request beschrieben."
+}
