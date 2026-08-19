@@ -522,6 +522,10 @@
         "unknown error": "unbekannter Fehler",
         "{count} selected": "{count} ausgewählt",
         "{from}–{to} of {total}": "{from}–{to} von {total}",
-        "{listed} of {total} lists": "{listed} von {total} Listen"
+        "{listed} of {total} lists": "{listed} von {total} Listen",
+        "Retry": "Erneut versuchen",
+        "Some mailboxes could not be loaded:": "Einige Postfächer konnten nicht geladen werden:",
+        "Added, but some mailboxes failed: ": "Hinzugefügt, aber einige Postfächer schlugen fehl: ",
+        "Removed, but some mailboxes failed: ": "Entfernt, aber einige Postfächer schlugen fehl: "
     }
 }

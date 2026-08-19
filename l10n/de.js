@@ -457,6 +457,10 @@ OC.L10N.register(
     "The DKIM signature of the latest mail test was invalid (result: %s). Invalidly signed mail loses DMARC protection and reputation.": "Die DKIM-Signatur des letzten Mail-Tests war ungültig (Ergebnis: %s). Ungültig signierte Mails verlieren DMARC-Schutz und Reputation.",
     "SPF does not pass or is not aligned with the customer domain (SPF domain: %s). Only an aligned SPF pass counts for DMARC.": "SPF besteht nicht bzw. ist nicht auf die Kunden-Domain ausgerichtet (SPF-Domain: %s). Für DMARC zählt nur ein alignter SPF-Pass.",
     "DKIM does not pass or signs with a third-party domain (%s). Only an aligned DKIM signature counts for DMARC.": "DKIM besteht nicht bzw. signiert mit einer fremden Domain (%s). Für DMARC zählt nur eine alignte DKIM-Signatur.",
+    "Retry" : "Erneut versuchen",
+    "Some mailboxes could not be loaded:" : "Einige Postfächer konnten nicht geladen werden:",
+    "Added, but some mailboxes failed: " : "Hinzugefügt, aber einige Postfächer schlugen fehl: ",
+    "Removed, but some mailboxes failed: " : "Entfernt, aber einige Postfächer schlugen fehl: ",
     "The check \"%1$s\" failed. Observed values: %2$s": "Der Check \"%1$s\" ist fehlgeschlagen. Beobachtete Werte: %2$s"
 },
     "nplurals=2; plural=(n != 1);");

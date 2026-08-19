@@ -1,5 +1,14 @@
 # Changelog
 
+## [4.0.51] — 2026-08
+
+### Fixed
+
+- Whitelist/blacklist: backend errors are now surfaced properly — the UI
+  shows an inline error with retry instead of a misleading empty list,
+  partial mailbox failures are listed as warnings, and the add dialog
+  stays open on failure so the error message remains visible.
+
 ## [4.0.50] — 2026-08
 
 ### Changed

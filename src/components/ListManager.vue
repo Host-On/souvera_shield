@@ -28,6 +28,22 @@
             <NcLoadingIcon :size="32" />
         </div>
 
+        <div v-else-if="loadError" class="listmgr__error" data-testid="listmgr-error">
+            <AlertCircle :size="20" />
+            <span>{{ loadError }}</span>
+            <NcButton type="tertiary" @click="load">
+                <template #icon><Refresh :size="16" /></template>
+                {{ t('Retry') }}
+            </NcButton>
+        </div>
+
+        <NcNoteCard v-else-if="warnings.length" type="warning" class="listmgr__warnings" data-testid="listmgr-warnings">
+            {{ t('Some mailboxes could not be loaded:') }}
+            <ul>
+                <li v-for="w in warnings" :key="w">{{ w }}</li>
+            </ul>
+        </NcNoteCard>
+
         <NcEmptyContent v-else-if="!filteredEntries.length"
                         :name="searchTerm ? t('No matches.') : t('No entries yet.')"
                         :data-testid="`listmgr-empty-${listKey}`">
@@ -95,9 +111,12 @@ import NcButton        from '@nextcloud/vue/components/NcButton'
 import NcTextField     from '@nextcloud/vue/components/NcTextField'
 import NcEmptyContent  from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon   from '@nextcloud/vue/components/NcLoadingIcon'
+import NcNoteCard       from '@nextcloud/vue/components/NcNoteCard'
 import NcDialog        from '@nextcloud/vue/components/NcDialog'
 
 import Plus                from 'vue-material-design-icons/Plus.vue'
+import AlertCircle          from 'vue-material-design-icons/AlertCircle.vue'
+import Refresh              from 'vue-material-design-icons/Refresh.vue'
 import Delete              from 'vue-material-design-icons/Delete.vue'
 import Download            from 'vue-material-design-icons/Download.vue'
 import FormatListBulleted  from 'vue-material-design-icons/FormatListBulleted.vue'
@@ -115,8 +134,8 @@ import { t } from '@/services/i18n'
 export default {
     name: 'ListManager',
 
-    components: { NcButton, NcTextField, NcEmptyContent, NcLoadingIcon, NcDialog, Pager,
-        Plus, Delete, Download, FormatListBulleted },
+    components: { NcButton, NcTextField, NcEmptyContent, NcLoadingIcon, NcDialog, NcNoteCard, Pager,
+        Plus, Delete, Download, FormatListBulleted, AlertCircle, Refresh },
 
     props: {
         listKey:        { type: String, required: true },  // 'whitelist' | 'blacklist'
@@ -134,6 +153,8 @@ export default {
     data() {
         return {
             entries: [],
+            loadError: '',
+            warnings: [],
             loading: true,
             searchTerm: '',
             currentPage: 0,
@@ -193,15 +214,18 @@ export default {
     methods: {
         async load() {
             this.loading = true
+            this.loadError = ''
+            this.warnings = []
             try {
                 const data = await api.get(this.listEndpoint)
                 const rows = Array.isArray(data) ? data : (data?.data || [])
+                this.warnings = Array.isArray(data?.warnings) ? data.warnings : []
                 this.entries = rows.map(r => {
                     if (typeof r === 'string') return r
                     return r.address || r.email || r.value || r.entry || ''
                 }).filter(Boolean)
             } catch (e) {
-                showError(api.errorMessage(e))
+                this.loadError = api.errorMessage(e)
                 this.entries = []
             } finally {
                 this.loading = false
@@ -215,12 +239,17 @@ export default {
                 submit: async () => {
                     const value = (this.prompt.value || '').trim()
                     if (!value) return
-                    this.prompt.open = false
                     try {
-                        await api.post(this.addEndpoint, { entry: value })
+                        const res = await api.post(this.addEndpoint, { entry: value })
+                        this.prompt.open = false
                         showSuccess(t('Entry added.'))
+                        if (Array.isArray(res?.warnings) && res.warnings.length) {
+                            showError(t('Added, but some mailboxes failed: ') + res.warnings.join(' | '))
+                        }
                         await this.load()
                     } catch (e) {
+                        // Keep the dialog open so the user keeps their input
+                        // and sees the real backend error message.
                         showError(t('Could not add entry: ') + api.errorMessage(e))
                     }
                 },
@@ -233,8 +262,11 @@ export default {
                 message: entry,
                 onConfirm: async () => {
                     try {
-                        await api.post(this.removeEndpoint, { entry })
+                        const res = await api.post(this.removeEndpoint, { entry })
                         showSuccess(t('Removed.'))
+                        if (Array.isArray(res?.warnings) && res.warnings.length) {
+                            showError(t('Removed, but some mailboxes failed: ') + res.warnings.join(' | '))
+                        }
                         await this.load()
                     } catch (e) {
                         showError(api.errorMessage(e))
@@ -251,6 +283,20 @@ export default {
 </script>
 
 <style scoped>
+.listmgr__error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-error);
+    border-radius: var(--border-radius-large, 8px);
+    color: var(--color-error);
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.listmgr__error span { flex: 1; min-width: 200px; }
+.listmgr__warnings { margin-bottom: 12px; }
+.listmgr__warnings ul { margin: 6px 0 0 18px; padding: 0; }
 .listmgr__toolbar {
     display: flex;
     justify-content: space-between;

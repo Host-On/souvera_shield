@@ -533,11 +533,14 @@ class ApiController extends Controller {
             }
             $all = [];
             $seen = [];
+            $warnings = [];
+            $okCount = 0;
             $deadline = \time() + 15;
             foreach ($emails as $email) {
                 if (\time() > $deadline) break;
                 try {
                     $res = $fetch($email);
+                    $okCount++;
                     foreach ($res['data'] ?? [] as $item) {
                         $entry = $this->listEntryToString($item);
                         if ($entry === '' || isset($seen[$entry])) continue;
@@ -546,10 +549,21 @@ class ApiController extends Controller {
                     }
                 } catch (PMGException $e) {
                     $this->logger->warning('Shield multiListAction: fetch failed for ' . $email . ': ' . $e->getMessage());
+                    $warnings[] = $email . ': ' . $e->getMessage();
                 }
             }
             \usort($all, 'strcasecmp');
-            return new JSONResponse(['data' => $all]);
+            if ($okCount === 0) {
+                // Surface the failure instead of pretending the list is
+                // simply empty — otherwise the UI shows "No entries yet."
+                // and the operator never learns about the config problem.
+                return new JSONResponse([
+                    'error' => $warnings !== []
+                        ? \implode(' | ', $warnings)
+                        : 'Could not read the list — Proxmox Mail Gateway configuration problem.',
+                ], Http::STATUS_BAD_GATEWAY);
+            }
+            return new JSONResponse(['data' => $all, 'warnings' => $warnings]);
         } catch (PMGException $e) {
             return new JSONResponse(['error' => $e->getMessage()], $e->getHttpStatus() ?: Http::STATUS_INTERNAL_SERVER_ERROR);
         } catch (\Throwable $e) {
@@ -588,7 +602,15 @@ class ApiController extends Controller {
                 throw new PMGException($msg, 502);
             }
             $this->logAudit($auditAction, $entry);
-            return new JSONResponse(['data' => 'ok', 'applied' => $applied]);
+            return new JSONResponse([
+                'data' => 'ok',
+                'applied' => $applied,
+                'warnings' => \array_map(
+                    static fn($mail, $msg) => $mail . ': ' . $msg,
+                    \array_keys($errors),
+                    \array_values($errors)
+                ),
+            ]);
         } catch (PMGException $e) {
             return new JSONResponse(['error' => $e->getMessage()], $e->getHttpStatus() ?: Http::STATUS_INTERNAL_SERVER_ERROR);
         } catch (\Throwable $e) {
