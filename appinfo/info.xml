@@ -25,7 +25,7 @@ The app talks to PMG through Nextcloud's HTTP client; the PMG password is
 **encrypted at rest** via the Nextcloud ICrypto secret. It is fully integrated
 with Nextcloud's app layout and theming (NC 32–34) – no custom skin required.
     ]]></description>
-	<version>4.0.51</version>
+	<version>4.0.52</version>
     <licence>agpl</licence>
     <author homepage="https://souvera.eu">Host-On Service Provider GmbH</author>
     <namespace>SouveraShield</namespace>

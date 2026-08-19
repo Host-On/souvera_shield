@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.0.52] — 2026-08
+
+### Fixed
+
+- Input bindings for @nextcloud/vue 9.9: search fields and the add-entry
+  dialog in whitelist/blacklist (and the quarantine search) used the
+  removed `update:value` event — the fields never received input, so
+  search did nothing and adding silently failed. All inputs now use
+  v-model. Same fix for the settings toggles (`update:checked` → v-model).
+
 ## [4.0.51] — 2026-08
 
 ### Fixed

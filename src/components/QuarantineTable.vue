@@ -2,12 +2,11 @@
     <div class="qtable" :data-testid="`qtable-${listKey}`">
         <div class="qtable__toolbar">
             <NcTextField
-                :value="searchTerm"
+                v-model="searchTerm"
                 :label="t('Search…')"
                 :label-visible="false"
                 :placeholder="t('Search…')"
-                data-testid="qtable-search"
-                @update:value="searchTerm = $event" />
+                data-testid="qtable-search" />
             <NcActions v-if="mailboxOptions.length > 1" class="qtable__mailbox-filter">
                 <NcActionButton v-for="mb in mailboxOptions" :key="mb.value"
                     @click="mailboxFilter = mb.value"

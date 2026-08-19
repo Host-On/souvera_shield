@@ -13,16 +13,14 @@
 
         <div v-else class="souvera-card">
             <NcCheckboxRadioSwitch
-                :checked="settings.allow_file_quarantine"
-                data-testid="settings-file-quarantine"
-                @update:checked="onToggle('allow_file_quarantine', $event)">
+                v-model="settings.allow_file_quarantine"
+                data-testid="settings-file-quarantine">
                 {{ t('Enable file quarantine') }}
             </NcCheckboxRadioSwitch>
 
             <NcCheckboxRadioSwitch
-                :checked="settings.allow_virus_quarantine"
-                data-testid="settings-virus-quarantine"
-                @update:checked="onToggle('allow_virus_quarantine', $event)">
+                v-model="settings.allow_virus_quarantine"
+                data-testid="settings-virus-quarantine">
                 {{ t('Enable virus quarantine') }}
             </NcCheckboxRadioSwitch>
         </div>

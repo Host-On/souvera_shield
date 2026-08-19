@@ -2,12 +2,11 @@
     <div class="listmgr" :data-testid="`listmgr-${listKey}`">
         <div class="listmgr__toolbar">
             <NcTextField
-                :value="searchTerm"
+                v-model="searchTerm"
                 :label="t('Search…')"
                 :label-visible="false"
                 :placeholder="t('Search…')"
-                :data-testid="`listmgr-search-${listKey}`"
-                @update:value="searchTerm = $event" />
+                :data-testid="`listmgr-search-${listKey}`" />
             <div class="listmgr__toolbar-actions">
                 <NcButton type="primary"
                           :data-testid="`listmgr-add-${listKey}`"
@@ -88,11 +87,10 @@
                   :data-testid="`listmgr-add-dialog-${listKey}`"
                   @update:open="prompt.open = $event">
             <NcTextField
-                :value="prompt.value"
+                v-model="prompt.value"
                 :label="t('E-mail address or domain')"
                 :data-testid="`listmgr-add-input-${listKey}`"
                 placeholder="user@example.com"
-                @update:value="prompt.value = $event"
                 @keydown.enter="prompt.submit" />
         </NcDialog>
 
