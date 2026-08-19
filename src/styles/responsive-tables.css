@@ -1,0 +1,87 @@
+/* Responsive tables: on narrow screens every data table becomes a
+   stacked card list. Cells get their label from data-label attributes. */
+
+@media (max-width: 768px) {
+    .qtable__toolbar, .listmgr__toolbar, .audit-toolbar, .logins-toolbar,
+    .tests-toolbar, .sources-toolbar, .incidents-toolbar, .reports-toolbar,
+    .top-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .qtable__table-scroll,
+    .listmgr__table-scroll,
+    .audit-table-scroll,
+    .logins-table-scroll,
+    .rules-table-wrapper,
+    .sources-table-scroll,
+    .tests-table-scroll,
+    .incidents-table-scroll,
+    .reports-table-scroll,
+    .top-table-scroll {
+        overflow-x: visible !important;
+    }
+
+    .qtable__table, .listmgr__table, .audit-table, .logins-table, .rules-table,
+    .recent-table, .sources-table, .tests-table, .incidents-table, .reports-table,
+    .top-table {
+        display: block;
+        width: 100%;
+        border: none;
+        min-width: 0 !important;
+    }
+    .qtable__table thead, .listmgr__table thead, .audit-table thead,
+    .logins-table thead, .rules-table thead, .recent-table thead,
+    .sources-table thead, .tests-table thead, .incidents-table thead,
+    .reports-table thead, .top-table thead {
+        display: none;
+    }
+    .qtable__table tbody, .listmgr__table tbody, .audit-table tbody,
+    .logins-table tbody, .rules-table tbody, .recent-table tbody,
+    .sources-table tbody, .tests-table tbody, .incidents-table tbody,
+    .reports-table tbody, .top-table tbody {
+        display: block;
+    }
+    .qtable__table tr, .listmgr__table tr, .audit-table tr,
+    .logins-table tr, .rules-table tr, .recent-table tr,
+    .sources-table tr, .tests-table tr, .incidents-table tr,
+    .reports-table tr, .top-table tr {
+        display: block;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        margin-bottom: 8px;
+        padding: 8px 12px;
+        background: var(--color-main-background);
+    }
+    .qtable__table td, .listmgr__table td, .audit-table td,
+    .logins-table td, .rules-table td, .recent-table td,
+    .sources-table td, .tests-table td, .incidents-table td,
+    .reports-table td, .top-table td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border: none !important;
+        padding: 5px 0;
+        text-align: left;
+        min-width: 0;
+    }
+    .qtable__table td::before, .listmgr__table td::before, .audit-table td::before,
+    .logins-table td::before, .rules-table td::before, .recent-table td::before,
+    .sources-table td::before, .tests-table td::before, .incidents-table td::before,
+    .reports-table td::before, .top-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--color-text-maxcontrast);
+        flex-shrink: 0;
+    }
+    .qtable__table td:not([data-label]), .listmgr__table td:not([data-label]),
+    .audit-table td:not([data-label]), .logins-table td:not([data-label]),
+    .rules-table td:not([data-label]), .recent-table td:not([data-label]),
+    .sources-table td:not([data-label]), .tests-table td:not([data-label]),
+    .incidents-table td:not([data-label]), .reports-table td:not([data-label]),
+    .top-table td:not([data-label]) {
+        display: inline-flex;
+        justify-content: flex-end;
+        width: 100%;
+    }
+}

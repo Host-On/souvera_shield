@@ -1,5 +1,20 @@
 # Changelog
 
+## [4.0.50] — 2026-08
+
+### Changed
+
+- Whitelist/blacklist now cover ALL identities of a user (primary, aliases,
+  shared mailboxes): entries are merged across mailboxes and add/remove
+  operations apply to every mailbox.
+- All data tables are responsive: on narrow screens they render as stacked
+  cards with visible field labels instead of a squeezed table.
+
+### Fixed
+
+- Whitelist/blacklist list/add/remove no longer depend on the raw NC e-mail
+  address alone; identity discovery is used with a safe fallback.
+
 ## [4.0.49] — 2026-08
 
 Repository moved to the Host-On organization. This release repoints the

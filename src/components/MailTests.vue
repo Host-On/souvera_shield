@@ -42,14 +42,14 @@
                     </tr></thead>
                     <tbody>
                         <tr v-for="r in tests" :key="r.id" data-testid="reputation-mailtests-row">
-                            <td class="col-time">{{ fmtDateTime(r.created_at) }}</td>
-                            <td><StatusBadge :status="r.status" :error="r.error" /></td>
-                            <td class="col-num"><ScoreBadge :score="r.score" :status="r.status" /></td>
-                            <td class="col-num"><ResultBadge :value="r.spf"   /></td>
-                            <td class="col-num"><ResultBadge :value="r.dkim"  /></td>
-                            <td class="col-num"><ResultBadge :value="r.dmarc" /></td>
-                            <td class="col-trigger"><span class="souvera-muted">{{ r.trigger_type === 'weekly' ? t('Weekly') : t('Manual') }}</span></td>
-                            <td class="col-action">
+                            <td class="col-time" :data-label="t('When')">{{ fmtDateTime(r.created_at) }}</td>
+                            <td :data-label="t('Status')"><StatusBadge :status="r.status" :error="r.error" /></td>
+                            <td class="col-num" :data-label="t('Score')"><ScoreBadge :score="r.score" :status="r.status" /></td>
+                            <td class="col-num" :data-label="t('SPF')"><ResultBadge :value="r.spf"   /></td>
+                            <td class="col-num" :data-label="t('DKIM')"><ResultBadge :value="r.dkim"  /></td>
+                            <td class="col-num" :data-label="t('DMARC')"><ResultBadge :value="r.dmarc" /></td>
+                            <td class="col-trigger" :data-label="t('Trigger')"><span class="souvera-muted">{{ r.trigger_type === 'weekly' ? t('Weekly') : t('Manual') }}</span></td>
+                            <td class="col-action" data-label="">
                                 <div class="actions">
                                     <NcButton v-if="canRefresh(r)"
                                               type="tertiary"

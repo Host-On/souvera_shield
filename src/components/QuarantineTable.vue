@@ -75,10 +75,10 @@
                                        :data-testid="`qtable-select-${rowId(row)}`"
                                        @change="toggleRow(row)">
                             </td>
-                            <td class="qtable__col-time">{{ formatTime(row.time) }}</td>
-                            <td class="qtable__col-from"><span class="qtable__trunc" :title="row.from">{{ row.from }}</span></td>
-                            <td class="qtable__col-to"><span class="qtable__trunc" :title="row._pmail">{{ row._pmail || '' }}</span></td>
-                            <td class="qtable__col-subject"><span class="qtable__trunc" :title="row.subject">{{ row.subject }}</span></td>
+                            <td class="qtable__col-time" :data-label="t('Received')">{{ formatTime(row.time) }}</td>
+                            <td class="qtable__col-from" :data-label="t('From')"><span class="qtable__trunc" :title="row.from">{{ row.from }}</span></td>
+                            <td class="qtable__col-to" :data-label="t('To')"><span class="qtable__trunc" :title="row._pmail">{{ row._pmail || '' }}</span></td>
+                            <td class="qtable__col-subject" :data-label="t('Subject')"><span class="qtable__trunc" :title="row.subject">{{ row.subject }}</span></td>
                             <td class="qtable__col-action">
                                 <div class="qtable__actions">
                                     <NcButton type="tertiary"

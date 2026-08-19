@@ -46,11 +46,11 @@
                     </tr></thead>
                     <tbody>
                         <tr v-for="inc in paginatedIncidents" :key="inc.id" data-testid="reputation-incident-row">
-                            <td class="col-sev"><span :class="['souvera-badge', sevClass(inc.severity)]">{{ sevLabel(inc.severity) }}</span></td>
-                            <td class="col-title"><span class="incidents-trunc" :title="inc.title">{{ inc.title }}</span></td>
-                            <td class="col-cat souvera-muted">{{ catLabel(inc.category) }}</td>
-                            <td class="col-time souvera-muted">{{ fmtDate(inc.updated_at) }}</td>
-                            <td class="col-status">
+                            <td class="col-sev" :data-label="t('Severity')"><span :class="['souvera-badge', sevClass(inc.severity)]">{{ sevLabel(inc.severity) }}</span></td>
+                            <td class="col-title" :data-label="t('Incident')"><span class="incidents-trunc" :title="inc.title">{{ inc.title }}</span></td>
+                            <td class="col-cat souvera-muted" :data-label="t('Category')">{{ catLabel(inc.category) }}</td>
+                            <td class="col-time souvera-muted" :data-label="t('Updated')">{{ fmtDate(inc.updated_at) }}</td>
+                            <td class="col-status" :data-label="t('Status')">
                                 <span :class="['souvera-badge', inc.status === 'open' ? 'souvera-badge--warn' : 'souvera-badge--ok']">
                                     {{ inc.status === 'open' ? t('Open') : t('Resolved') }}
                                 </span>

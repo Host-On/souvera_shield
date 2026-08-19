@@ -49,10 +49,10 @@
                             </tr></thead>
                             <tbody>
                                 <tr v-for="row in pagedTopSenders" :key="(row.organization || row.orgName) + '-' + row.messages">
-                                    <td>{{ row.organization || row.orgName || '?' }}</td>
-                                    <td class="col-num">{{ Number(row.messages || 0).toLocaleString() }}</td>
-                                    <td class="col-num"><PercentBadge :pct="row.dkimPassRate" /></td>
-                                    <td class="col-num"><PercentBadge :pct="row.spfPassRate" /></td>
+                                    <td :data-label="t('Organization')">{{ row.organization || row.orgName || '?' }}</td>
+                                    <td class="col-num" :data-label="t('Messages')">{{ Number(row.messages || 0).toLocaleString() }}</td>
+                                    <td class="col-num" :data-label="t('DKIM')"><PercentBadge :pct="row.dkimPassRate" /></td>
+                                    <td class="col-num" :data-label="t('SPF')"><PercentBadge :pct="row.spfPassRate" /></td>
                                 </tr>
                             </tbody>
                         </table>

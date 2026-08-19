@@ -43,8 +43,8 @@
                     </tr></thead>
                     <tbody>
                         <tr v-for="entry in paginatedEntries" :key="entry">
-                            <td>{{ entry }}</td>
-                            <td class="listmgr__col-action">
+                            <td :data-label="t('Entry')">{{ entry }}</td>
+                            <td class="listmgr__col-action" data-label="">
                                 <NcButton type="tertiary"
                                           :aria-label="t('Remove')"
                                           :title="t('Remove')"

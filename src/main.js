@@ -11,6 +11,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import './styles/forms.css'
+import './styles/responsive-tables.css'
 
 const mountEl = document.getElementById('souvera-shield-app')
 if (mountEl) {

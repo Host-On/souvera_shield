@@ -28,10 +28,10 @@
                     </tr></thead>
                     <tbody>
                         <tr v-for="row in paginatedEntries" :key="row.id" data-testid="audit-row">
-                            <td class="col-time">{{ formatTime(row.created_at) }}</td>
-                            <td class="col-who">{{ row.user_id }}</td>
-                            <td class="col-what">{{ row.action }}</td>
-                            <td class="col-target"><span class="audit-trunc" :title="row.target">{{ row.target }}</span></td>
+                            <td class="col-time" :data-label="t('When')">{{ formatTime(row.created_at) }}</td>
+                            <td class="col-who" :data-label="t('Who')">{{ row.user_id }}</td>
+                            <td class="col-what" :data-label="t('What')">{{ row.action }}</td>
+                            <td class="col-target" :data-label="t('Target')"><span class="audit-trunc" :title="row.target">{{ row.target }}</span></td>
                         </tr>
                     </tbody>
                 </table>

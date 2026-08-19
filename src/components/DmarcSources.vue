@@ -40,11 +40,11 @@
                             </tr></thead>
                             <tbody>
                                 <tr v-for="s in sources" :key="s.organization" data-testid="reputation-source-row">
-                                    <td>{{ s.organization }}</td>
-                                    <td class="col-num">{{ Number(s.messages || 0).toLocaleString() }}</td>
-                                    <td class="col-num"><PercentBadge :pct="s.dkimPassRate" /></td>
-                                    <td class="col-num"><PercentBadge :pct="s.spfPassRate" /></td>
-                                    <td class="col-class">
+                                    <td :data-label="t('Source')">{{ s.organization }}</td>
+                                    <td class="col-num" :data-label="t('Messages')">{{ Number(s.messages || 0).toLocaleString() }}</td>
+                                    <td class="col-num" :data-label="t('DKIM')"><PercentBadge :pct="s.dkimPassRate" /></td>
+                                    <td class="col-num" :data-label="t('SPF')"><PercentBadge :pct="s.spfPassRate" /></td>
+                                    <td class="col-class" :data-label="t('Classification')">
                                         <span :class="['souvera-badge', classBadge(s.classification)]">{{ classLabel(s.classification) }}</span>
                                     </td>
                                 </tr>

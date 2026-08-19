@@ -202,65 +202,61 @@ class ApiController extends Controller {
     #[NoAdminRequired]
     #[NoCSRFRequired]
     public function whitelist(): JSONResponse {
-        return $this->listAction(fn(string $pmail) => $this->pmg->getWhitelist($pmail));
+        return $this->multiListAction(fn(string $pmail) => $this->pmg->getWhitelist($pmail));
     }
 
     #[NoAdminRequired]
     #[NoCSRFRequired]
     public function blacklist(): JSONResponse {
-        return $this->listAction(fn(string $pmail) => $this->pmg->getBlacklist($pmail));
+        return $this->multiListAction(fn(string $pmail) => $this->pmg->getBlacklist($pmail));
     }
 
     #[NoAdminRequired]
     public function addWhitelist(): JSONResponse {
-        return $this->withPmail(function (string $pmail): JSONResponse {
-            $entry = $this->requiredParam('entry');
-            $this->pmg->addToWhitelist($pmail, $entry);
-            $this->logAudit('whitelist:add', $entry);
-            return new JSONResponse(['data' => 'ok']);
-        });
+        $entry = $this->requiredParam('entry');
+        return $this->multiModifyAction(
+            fn(string $pmail) => $this->pmg->addToWhitelist($pmail, $entry),
+            'whitelist:add', $entry
+        );
     }
 
     #[NoAdminRequired]
     public function addBlacklist(): JSONResponse {
-        return $this->withPmail(function (string $pmail): JSONResponse {
-            $entry = $this->requiredParam('entry');
-            $this->pmg->addToBlacklist($pmail, $entry);
-            $this->logAudit('blacklist:add', $entry);
-            return new JSONResponse(['data' => 'ok']);
-        });
+        $entry = $this->requiredParam('entry');
+        return $this->multiModifyAction(
+            fn(string $pmail) => $this->pmg->addToBlacklist($pmail, $entry),
+            'blacklist:add', $entry
+        );
     }
 
     #[NoAdminRequired]
     public function removeWhitelist(): JSONResponse {
-        return $this->withPmail(function (string $pmail): JSONResponse {
-            $entry = $this->requiredParam('entry');
-            $this->pmg->removeFromWhitelist($pmail, $entry);
-            $this->logAudit('whitelist:remove', $entry);
-            return new JSONResponse(['data' => 'ok']);
-        });
+        $entry = $this->requiredParam('entry');
+        return $this->multiModifyAction(
+            fn(string $pmail) => $this->pmg->removeFromWhitelist($pmail, $entry),
+            'whitelist:remove', $entry
+        );
     }
 
     #[NoAdminRequired]
     public function removeBlacklist(): JSONResponse {
-        return $this->withPmail(function (string $pmail): JSONResponse {
-            $entry = $this->requiredParam('entry');
-            $this->pmg->removeFromBlacklist($pmail, $entry);
-            $this->logAudit('blacklist:remove', $entry);
-            return new JSONResponse(['data' => 'ok']);
-        });
+        $entry = $this->requiredParam('entry');
+        return $this->multiModifyAction(
+            fn(string $pmail) => $this->pmg->removeFromBlacklist($pmail, $entry),
+            'blacklist:remove', $entry
+        );
     }
 
     #[NoAdminRequired]
     #[NoCSRFRequired]
     public function exportWhitelist(): DataDownloadResponse {
-        return $this->exportListCsv('whitelist', fn(string $pmail) => $this->pmg->getWhitelist($pmail));
+        return $this->multiExportListCsv('whitelist', fn(string $pmail) => $this->pmg->getWhitelist($pmail));
     }
 
     #[NoAdminRequired]
     #[NoCSRFRequired]
     public function exportBlacklist(): DataDownloadResponse {
-        return $this->exportListCsv('blacklist', fn(string $pmail) => $this->pmg->getBlacklist($pmail));
+        return $this->multiExportListCsv('blacklist', fn(string $pmail) => $this->pmg->getBlacklist($pmail));
     }
 
     // ---------------------------------------------------------------
@@ -519,6 +515,135 @@ class ApiController extends Controller {
         } catch (\Throwable $e) {
             $this->logger->warning('Audit log write failed', ['exception' => $e]);
         }
+    }
+
+    /**
+     * Merge a per-mailbox list across ALL identities of the current user
+     * (primary + aliases + shared mailboxes), deduplicated by entry.
+     * Falls back to the NC e-mail address when identity discovery is
+     * unavailable.
+     *
+     * @param callable(string):array{data: mixed} $fetch
+     */
+    private function multiListAction(callable $fetch): JSONResponse {
+        try {
+            $emails = $this->identityDiscovery->discover();
+            if ($emails === []) {
+                $emails = [$this->requireUserEmail()];
+            }
+            $all = [];
+            $seen = [];
+            $deadline = \time() + 15;
+            foreach ($emails as $email) {
+                if (\time() > $deadline) break;
+                try {
+                    $res = $fetch($email);
+                    foreach ($res['data'] ?? [] as $item) {
+                        $entry = $this->listEntryToString($item);
+                        if ($entry === '' || isset($seen[$entry])) continue;
+                        $seen[$entry] = true;
+                        $all[] = $entry;
+                    }
+                } catch (PMGException $e) {
+                    $this->logger->warning('Shield multiListAction: fetch failed for ' . $email . ': ' . $e->getMessage());
+                }
+            }
+            \usort($all, 'strcasecmp');
+            return new JSONResponse(['data' => $all]);
+        } catch (PMGException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], $e->getHttpStatus() ?: Http::STATUS_INTERNAL_SERVER_ERROR);
+        } catch (\Throwable $e) {
+            $this->logger->error('Shield multiListAction: unhandled error', ['exception' => $e]);
+            return new JSONResponse(['error' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Apply an add/remove operation to ALL identities of the current user.
+     * Per-mailbox failures are collected; the call fails only when NONE
+     * of the mailboxes accepted the change.
+     *
+     * @param callable(string):void $op
+     */
+    private function multiModifyAction(callable $op, string $auditAction, string $entry): JSONResponse {
+        try {
+            $emails = $this->identityDiscovery->discover();
+            if ($emails === []) {
+                $emails = [$this->requireUserEmail()];
+            }
+            $applied = 0;
+            $errors = [];
+            foreach ($emails as $email) {
+                try {
+                    $op($email);
+                    $applied++;
+                } catch (PMGException $e) {
+                    $errors[$email] = $e->getMessage();
+                }
+            }
+            if ($applied === 0) {
+                $msg = $errors !== []
+                    ? \implode('; ', \array_slice($errors, 0, 2))
+                    : 'No mailbox accepted the change';
+                throw new PMGException($msg, 502);
+            }
+            $this->logAudit($auditAction, $entry);
+            return new JSONResponse(['data' => 'ok', 'applied' => $applied]);
+        } catch (PMGException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], $e->getHttpStatus() ?: Http::STATUS_INTERNAL_SERVER_ERROR);
+        } catch (\Throwable $e) {
+            $this->logger->error('Shield multiModifyAction: unhandled error', ['exception' => $e]);
+            return new JSONResponse(['error' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * CSV export across all identities (deduplicated entries).
+     *
+     * @param callable(string):array{data:mixed} $fetch
+     */
+    private function multiExportListCsv(string $key, callable $fetch): DataDownloadResponse {
+        try {
+            $emails = $this->identityDiscovery->discover();
+            if ($emails === []) {
+                $emails = [$this->requireUserEmail()];
+            }
+            $rows = [];
+            $seen = [];
+            foreach ($emails as $email) {
+                try {
+                    foreach (($fetch($email)['data'] ?? []) as $item) {
+                        $entry = $this->listEntryToString($item);
+                        if ($entry === '' || isset($seen[$entry])) continue;
+                        $seen[$entry] = true;
+                        $rows[] = ['entry' => $entry];
+                    }
+                } catch (PMGException $e) {
+                    $this->logger->warning('Shield multiExportListCsv: fetch failed for ' . $email . ': ' . $e->getMessage());
+                }
+            }
+        } catch (PMGException $e) {
+            return new DataDownloadResponse('error,' . $e->getMessage(), $key . '-error.csv', 'text/csv');
+        }
+        $csv = $this->csvFromRows($rows, ['entry']);
+        return new DataDownloadResponse(
+            $csv,
+            'shield-' . $key . '-' . date('Ymd-His') . '.csv',
+            'text/csv; charset=utf-8'
+        );
+    }
+
+    /**
+     * Normalise a PMG list item (string or object) to a plain entry string.
+     */
+    private function listEntryToString(mixed $item): string {
+        if (\is_string($item)) {
+            return \trim($item);
+        }
+        if (\is_array($item)) {
+            return \trim((string) ($item['address'] ?? $item['email'] ?? $item['value'] ?? $item['entry'] ?? ''));
+        }
+        return '';
     }
 
     /**

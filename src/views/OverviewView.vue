@@ -44,10 +44,10 @@
                 </tr></thead>
                 <tbody>
                     <tr v-for="row in recent" :key="row.id" data-testid="overview-recent-row">
-                        <td class="col-time">{{ formatTime(row.time) }}</td>
-                        <td class="col-from"><span class="souvera-trunc" :title="row.from">{{ row.from }}</span></td>
-                        <td class="col-mailbox">{{ row._pmail || '' }}</td>
-                        <td class="col-subject"><span class="souvera-trunc" :title="row.subject">{{ row.subject }}</span></td>
+                        <td class="col-time" :data-label="t('Received')">{{ formatTime(row.time) }}</td>
+                        <td class="col-from" :data-label="t('From')"><span class="souvera-trunc" :title="row.from">{{ row.from }}</span></td>
+                        <td class="col-mailbox" :data-label="t('Mailbox')">{{ row._pmail || '' }}</td>
+                        <td class="col-subject" :data-label="t('Subject')"><span class="souvera-trunc" :title="row.subject">{{ row.subject }}</span></td>
                         <td class="col-action">
                             <NcButton type="tertiary" @click="goToQuarantine">
                                 <template #icon><ArrowRight :size="18" /></template>

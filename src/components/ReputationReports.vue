@@ -32,13 +32,13 @@
                         </tr></thead>
                         <tbody>
                             <tr v-for="r in rows" :key="r.id || (r.orgName + r.dateRangeBegin)" data-testid="reputation-reports-row">
-                                <td>{{ r.orgName || '?' }}</td>
-                                <td class="col-time">{{ fmtDate(r.dateRangeBegin) }}</td>
-                                <td class="col-time">{{ fmtDate(r.dateRangeEnd) }}</td>
-                                <td class="col-num">{{ Number(r.totalMessages || 0).toLocaleString() }}</td>
-                                <td class="col-num"><PercentBadge :pct="pctOf(r.passedDkim, r.totalMessages)" /></td>
-                                <td class="col-num"><PercentBadge :pct="pctOf(r.passedSpf,  r.totalMessages)" /></td>
-                                <td class="col-policy"><span class="souvera-badge">{{ (r.policyP || '?').toString().toUpperCase() }}</span></td>
+                                <td :data-label="t('Reporter')">{{ r.orgName || '?' }}</td>
+                                <td class="col-time" :data-label="t('From')">{{ fmtDate(r.dateRangeBegin) }}</td>
+                                <td class="col-time" :data-label="t('To')">{{ fmtDate(r.dateRangeEnd) }}</td>
+                                <td class="col-num" :data-label="t('Messages')">{{ Number(r.totalMessages || 0).toLocaleString() }}</td>
+                                <td class="col-num" :data-label="t('DKIM')"><PercentBadge :pct="pctOf(r.passedDkim, r.totalMessages)" /></td>
+                                <td class="col-num" :data-label="t('SPF')"><PercentBadge :pct="pctOf(r.passedSpf,  r.totalMessages)" /></td>
+                                <td class="col-policy" :data-label="t('Policy')"><span class="souvera-badge">{{ (r.policyP || '?').toString().toUpperCase() }}</span></td>
                             </tr>
                         </tbody>
                     </table>

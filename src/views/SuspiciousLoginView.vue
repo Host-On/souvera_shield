@@ -67,16 +67,16 @@
                             data-testid="suspicious-login-row"
                             :class="{ 'is-resolved': ev.resolved }"
                             @click="openDetails(ev)">
-                            <td class="col-sev">{{ sevIcon(ev.severity) }}</td>
-                            <td class="col-user">{{ ev.user_id }}</td>
-                            <td><code>{{ ev.ip || '—' }}</code></td>
-                            <td class="col-country souvera-muted">{{ ev.geo_country || '—' }}</td>
-                            <td class="col-isp souvera-muted">{{ truncate(ev.isp_name, 24) || '—' }}</td>
-                            <td class="col-score">
+                            <td class="col-sev" data-label="">{{ sevIcon(ev.severity) }}</td>
+                            <td class="col-user" :data-label="t('User')">{{ ev.user_id }}</td>
+                            <td :data-label="t('IP')"><code>{{ ev.ip || '—' }}</code></td>
+                            <td class="col-country souvera-muted" :data-label="t('Country')">{{ ev.geo_country || '—' }}</td>
+                            <td class="col-isp souvera-muted" :data-label="t('ISP')">{{ truncate(ev.isp_name, 24) || '—' }}</td>
+                            <td class="col-score" :data-label="t('Score')">
                                 <span :class="['souvera-badge', scoreBadge(ev.confidence)]">{{ ev.confidence }}</span>
                             </td>
-                            <td class="col-rules souvera-muted">{{ firedRuleCount(ev.risk_flags) }}</td>
-                            <td class="col-time souvera-muted">{{ fmtTime(ev.created_at) }}</td>
+                            <td class="col-rules souvera-muted" :data-label="t('Rules')">{{ firedRuleCount(ev.risk_flags) }}</td>
+                            <td class="col-time souvera-muted" :data-label="t('Time')">{{ fmtTime(ev.created_at) }}</td>
                             <td class="col-status">
                                 <span :class="['souvera-badge', ev.resolved ? 'souvera-badge--ok' : 'souvera-badge--warn']">
                                     {{ ev.resolved ? t('Closed') : t('Open') }}
@@ -174,9 +174,9 @@
                         </tr></thead>
                         <tbody>
                             <tr v-for="r in firedRules" :key="r.key">
-                                <td>{{ r.label }}</td>
-                                <td class="col-rscore">{{ r.points }}</td>
-                                <td class="col-rdesc souvera-muted">{{ r.description }}</td>
+                                <td :data-label="t('Rule')">{{ r.label }}</td>
+                                <td class="col-rscore" :data-label="t('Points')">{{ r.points }}</td>
+                                <td class="col-rdesc souvera-muted" :data-label="t('Erklärung')">{{ r.description }}</td>
                             </tr>
                         </tbody>
                     </table>
