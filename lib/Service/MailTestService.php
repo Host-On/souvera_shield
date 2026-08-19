@@ -377,6 +377,77 @@ class MailTestService {
     }
 
     /**
+     * Send an internal notification mail (e.g. the daily spam report)
+     * through the workspace's Stalwart relay to a local mailbox.
+     *
+     * Sender = `spam-report@<recipient-domain>` via the anonymous
+     * trusted-relay submission — the mail runs through normal delivery
+     * (Sieve applies) and is signed with the workspace's DKIM. When the
+     * static mail-test credentials are configured, those are used instead
+     * (authenticated submission with sender alignment).
+     *
+     * @throws \RuntimeException on transport/config failure
+     */
+    public function sendReportMail(string $toEmail, string $fromLocal, string $subject, string $plainBody): void {
+        $at = strrpos($toEmail, '@');
+        if ($at === false || $at === 0) {
+            throw new \InvalidArgumentException('Invalid recipient address');
+        }
+        $domain = strtolower(substr($toEmail, $at + 1));
+
+        $stalwartUrl  = $this->central->read('stalwart_api_url');
+        $portOverride = $this->central->read('stalwart_smtp_port');
+        $hostOverride = $this->central->read('stalwart_smtp_host');
+
+        $staticUser = strtolower(trim((string)($this->central->read('stalwart_mailtest_user') ?? '')));
+        $staticPass = (string)($this->central->read('stalwart_mailtest_password') ?? '');
+
+        $smtpUser = '';
+        $smtpPass = '';
+        if ($staticUser !== '' && $staticPass !== '') {
+            $smtpUser = $staticUser;
+            $smtpPass = $staticPass;
+            $fromAddress = $staticUser;
+        } else {
+            $fromAddress = strtolower(trim($fromLocal)) . '@' . $domain;
+        }
+
+        $ports = $this->relayPortCandidates($portOverride);
+        $connectErrors = [];
+        $relayConfig = null;
+        foreach ($ports as $port) {
+            $relayConfig = MailTestRelayConfig::fromStalwart($stalwartUrl, $port, $smtpUser, $smtpPass, $hostOverride);
+            if ($relayConfig === null) {
+                throw new \RuntimeException(
+                    'Stalwart relay is not configured. Set `souvera_central.stalwart_api_url` '
+                    . '(or `souvera_central.stalwart_smtp_host`) in config.php.'
+                );
+            }
+            try {
+                $this->relay->send(
+                    config:      $relayConfig,
+                    fromAddress: $fromAddress,
+                    to:          $toEmail,
+                    fromDisplay: 'Souvera Shield',
+                    subject:     $subject,
+                    plainBody:   $plainBody,
+                );
+                $this->rememberRelayPort($port);
+                return;
+            } catch (MailTestRelayException $e) {
+                if ($e->stage === MailTestRelayException::STAGE_CONNECT) {
+                    $connectErrors[] = 'Port ' . $port . ': ' . $e->getMessage();
+                    continue;
+                }
+                throw new \RuntimeException($e->getMessage(), 0, $e);
+            }
+        }
+        throw new \RuntimeException(
+            'SMTP connect failed on every candidate port: ' . implode(' | ', $connectErrors)
+        );
+    }
+
+    /**
      * SMTP port candidates: an explicit override wins and disables
      * detection; otherwise the last known-good port (cached in the app
      * config) is tried first, then 587 (submission), 465 (implicit TLS,

@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.0.53] — 2026-08
+
+### Added
+
+- Daily spam report: every user with the Central "daily summary" setting
+  receives a mail (spam-report@<domain> via the workspace Stalwart relay)
+  listing the spam, virus and attachment quarantine entries of the last 24
+  hours, with a link to the Shield quarantine view. Sent once per day at
+  the configured hour.
+- PMG built-in spam report is automatically disabled (reportstyle=none)
+  when enabled in Central settings — Souvera replaces it with its own.
+
 ## [4.0.52] — 2026-08
 
 ### Fixed

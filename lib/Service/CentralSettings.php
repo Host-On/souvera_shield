@@ -40,6 +40,17 @@ class CentralSettings {
         return (float)$this->appConfig->getValueString(self::APP, 'settings.shield.min_spam_score', '2.5');
     }
 
+    /** Hour of day (0-23) at which the daily spam report is sent. */
+    public function reportHour(): int {
+        $hour = (int)$this->appConfig->getValueString(self::APP, 'settings.shield.report_hour', '6');
+        return max(0, min(23, $hour));
+    }
+
+    /** True when the PMG built-in spam report must be disabled globally. */
+    public function pmgReportDisableEnabled(): bool {
+        return $this->appConfig->getValueString(self::APP, 'settings.shield.pmg_report_disable', '1') === '1';
+    }
+
     // ===================================================================
     // Suspicious Login Detection settings
     // ===================================================================

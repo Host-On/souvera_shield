@@ -411,6 +411,34 @@ class PMGClient {
     }
 
     // -------------------------------------------------------------------
+    // Spam report configuration (global on the PMG host)
+    // -------------------------------------------------------------------
+
+    /**
+     * Current global spam report style of the PMG host
+     * (none|short|verbose|custom) — null when unavailable.
+     */
+    public function getSpamReportStyle(): ?string {
+        try {
+            $res = $this->request('GET', '/config/spam');
+        } catch (\Throwable $e) {
+            $this->logger->warning('PMG getSpamReportStyle failed: ' . $e->getMessage());
+            return null;
+        }
+        $style = $res['data']['reportstyle'] ?? null;
+        return \is_string($style) ? $style : null;
+    }
+
+    /**
+     * Set the global spam report style (e.g. "none" to disable the PMG
+     * built-in daily report because Souvera sends its own).
+     */
+    public function setSpamReportStyle(string $style): void {
+        $res = $this->request('PUT', '/config/spam', ['reportstyle' => $style]);
+        $this->assertSuccess($res, 'Failed to update PMG spam report style');
+    }
+
+    // -------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------
 
