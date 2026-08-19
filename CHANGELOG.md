@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.0.54] — 2026-08
+
+### Changed
+
+- The daily spam report now covers ALL identities of a user: primary
+  address, aliases and shared mailboxes are reported in separate sections
+  of one mail (only identities with entries are listed).
+
 ## [4.0.53] — 2026-08
 
 ### Added

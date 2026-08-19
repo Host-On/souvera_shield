@@ -5,6 +5,7 @@ namespace OCA\SouveraShield\BackgroundJob;
 
 use OCA\SouveraShield\AppInfo\Application;
 use OCA\SouveraShield\Service\CentralSettings;
+use OCA\SouveraShield\Service\IdentityDiscoveryService;
 use OCA\SouveraShield\Service\MailTestService;
 use OCA\SouveraShield\Service\PMGClient;
 use OCA\SouveraShield\Service\PMGException;
@@ -40,6 +41,7 @@ class DailySpamReportJob extends TimedJob {
         private readonly IConfig $config,
         private readonly PMGClient $pmg,
         private readonly CentralSettings $central,
+        private readonly IdentityDiscoveryService $identityDiscovery,
         private readonly MailTestService $mailTest,
         private readonly IURLGenerator $urlGenerator,
         private readonly LoggerInterface $logger,
@@ -98,45 +100,67 @@ class DailySpamReportJob extends TimedJob {
         }
 
         $minScore = $this->central->minSpamScore();
-        $sections = [
-            $this->buildSection(
-                'Spam-Quarantäne',
-                fn(): array => $this->fetchQuarantineRows($email, fn() => $this->pmg->getSpamQuarantine($email)),
-                $minScore,
-            ),
-            $this->buildSection(
-                'Viren-Quarantäne',
-                fn(): array => $this->fetchQuarantineRows($email, fn() => $this->pmg->getVirusQuarantine($email)),
-                null,
-            ),
-            $this->buildSection(
-                'Anhang-Quarantäne',
-                fn(): array => $this->fetchQuarantineRows($email, fn() => $this->pmg->getAttachmentQuarantine($email)),
-                null,
-            ),
-        ];
 
-        $total = 0;
-        foreach ($sections as $s) {
-            $total += $s['count'];
+        // The report covers EVERY identity of the user — primary address,
+        // aliases and shared mailboxes each have their own PMG quarantine.
+        $identities = [];
+        try {
+            $identities = $this->identityDiscovery->discover();
+        } catch (\Throwable $e) {
+            $this->logger->warning('DailySpamReportJob: identity discovery failed for ' . $uid . ': ' . $e->getMessage());
         }
-        if ($total === 0) {
+        if ($identities === []) {
+            $identities = [$email];
+        }
+
+        $identitySections = [];
+        $grandTotal = 0;
+        foreach ($identities as $identity) {
+            if (!$this->pmg->isAllowedDomain($identity)) {
+                continue; // PMG may not manage this domain — skip quietly
+            }
+            $sections = [
+                $this->buildSection('Spam-Quarantäne', fn(): array => $this->fetchQuarantineRows($identity, fn() => $this->pmg->getSpamQuarantine($identity)), $minScore),
+                $this->buildSection('Viren-Quarantäne', fn(): array => $this->fetchQuarantineRows($identity, fn() => $this->pmg->getVirusQuarantine($identity)), null),
+                $this->buildSection('Anhang-Quarantäne', fn(): array => $this->fetchQuarantineRows($identity, fn() => $this->pmg->getAttachmentQuarantine($identity)), null),
+            ];
+            $identityTotal = 0;
+            foreach ($sections as $section) {
+                $identityTotal += $section['count'];
+            }
+            if ($identityTotal === 0) {
+                continue; // keep the report compact
+            }
+            $grandTotal += $identityTotal;
+            $identitySections[] = [
+                'email' => $identity,
+                'sections' => $sections,
+                'count' => $identityTotal,
+            ];
+        }
+
+        if ($grandTotal === 0) {
             return; // nothing to report — stay quiet
         }
 
         $body = "Souvera Spam-Report vom " . date('d.m.Y') . "\n\n";
-        $body .= "In den letzten 24 Stunden wurden für Ihr Postfach insgesamt "
-            . $total . " Nachricht(en) zurückgehalten:\n\n";
+        $body .= "In den letzten 24 Stunden wurden insgesamt "
+            . $grandTotal . " Nachricht(en) zurückgehalten:\n\n";
 
-        foreach ($sections as $s) {
-            if ($s['count'] === 0) {
-                continue;
-            }
-            $body .= str_repeat('-', 60) . "\n";
-            $body .= $s['title'] . ' (' . $s['count'] . ")\n";
-            $body .= str_repeat('-', 60) . "\n";
-            foreach ($s['rows'] as $row) {
-                $body .= $row . "\n";
+        foreach ($identitySections as $block) {
+            $body .= str_repeat('=', 60) . "\n";
+            $body .= "Postfach: " . $block['email'] . " (" . $block['count'] . ")\n";
+            $body .= str_repeat('=', 60) . "\n";
+            foreach ($block['sections'] as $section) {
+                if ($section['count'] === 0) {
+                    continue;
+                }
+                $body .= "  " . $section['title'] . ' (' . $section['count'] . ")\n";
+                $body .= str_repeat('-', 56) . "\n";
+                foreach ($section['rows'] as $row) {
+                    $body .= $row . "\n";
+                }
+                $body .= "\n";
             }
             $body .= "\n";
         }
