@@ -70,6 +70,7 @@ class SmtpMailTestRelay {
         string $fromDisplay,
         string $subject,
         string $plainBody,
+        ?string $htmlBody = null,
     ): void {
         try {
             $this->connect($config);
@@ -116,6 +117,7 @@ class SmtpMailTestRelay {
                 to:          $to,
                 subject:     $subject,
                 plainBody:   $plainBody,
+                htmlBody:    $htmlBody,
             );
             $this->writeRaw($message . "\r\n.\r\n");
             $this->readReply(250, MailTestRelayException::STAGE_DATA);
@@ -403,11 +405,12 @@ class SmtpMailTestRelay {
         string $to,
         string $subject,
         string $plainBody,
+        ?string $htmlBody = null,
     ): string {
         $date = gmdate('D, d M Y H:i:s') . ' +0000';
         $messageId = '<' . bin2hex(random_bytes(12)) . '@' . $this->deriveEhloHost($fromAddress) . '>';
 
-        // Simple RFC 5322 message, ASCII-safe subject via 7bit encoding.
+        // Common RFC 5322 headers, ASCII-safe subject via 7bit encoding.
         $lines = [
             'Date: ' . $date,
             'Message-ID: ' . $messageId,
@@ -415,13 +418,32 @@ class SmtpMailTestRelay {
             'To: <' . $to . '>',
             'Subject: ' . $this->encodeHeaderIfNeeded($subject),
             'MIME-Version: 1.0',
-            'Content-Type: text/plain; charset=utf-8',
-            'Content-Transfer-Encoding: 8bit',
             'X-Souvera-Shield: mail-test',
-            '',
-            // RFC 5321 § 4.5.2 - dot-stuff any line starting with a period.
-            $this->dotStuff($plainBody),
         ];
+
+        if ($htmlBody !== null && $htmlBody !== '') {
+            // multipart/alternative: plain text first, HTML second.
+            $boundary = '=souvera.' . bin2hex(random_bytes(8)) . '=';
+            $lines[] = 'Content-Type: multipart/alternative; boundary="' . $boundary . '"';
+            $lines[] = '';
+            $lines[] = '--' . $boundary;
+            $lines[] = 'Content-Type: text/plain; charset=utf-8';
+            $lines[] = 'Content-Transfer-Encoding: 8bit';
+            $lines[] = '';
+            $lines[] = $this->dotStuff($plainBody);
+            $lines[] = '--' . $boundary;
+            $lines[] = 'Content-Type: text/html; charset=utf-8';
+            $lines[] = 'Content-Transfer-Encoding: 8bit';
+            $lines[] = '';
+            $lines[] = $this->dotStuff($htmlBody);
+            $lines[] = '--' . $boundary . '--';
+        } else {
+            $lines[] = 'Content-Type: text/plain; charset=utf-8';
+            $lines[] = 'Content-Transfer-Encoding: 8bit';
+            $lines[] = '';
+            // RFC 5321 § 4.5.2 - dot-stuff any line starting with a period.
+            $lines[] = $this->dotStuff($plainBody);
+        }
         return implode("\r\n", $lines);
     }
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## [4.0.55] — 2026-08
+
+### Fixed
+
+- The daily report send time is now evaluated in the tenant's configured
+  timezone (Nextcloud `default_timezone`) instead of the server's PHP
+  timezone — reports arrive at the locally configured hour.
+- The job now ticks every 5 minutes, so the daily mail goes out within
+  minutes of the configured hour (instead of up to an hour later).
+
+### Changed
+
+- The report mail is now a styled multipart message (HTML design with
+  per-mailbox cards and quarantine tables, plus a plain-text fallback).
+  All sender/subject data is HTML-escaped.
+
 ## [4.0.54] — 2026-08
 
 ### Changed

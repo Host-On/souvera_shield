@@ -388,7 +388,7 @@ class MailTestService {
      *
      * @throws \RuntimeException on transport/config failure
      */
-    public function sendReportMail(string $toEmail, string $fromLocal, string $subject, string $plainBody): void {
+    public function sendReportMail(string $toEmail, string $fromLocal, string $subject, string $plainBody, ?string $htmlBody = null): void {
         $at = strrpos($toEmail, '@');
         if ($at === false || $at === 0) {
             throw new \InvalidArgumentException('Invalid recipient address');
@@ -431,6 +431,7 @@ class MailTestService {
                     fromDisplay: 'Souvera Shield',
                     subject:     $subject,
                     plainBody:   $plainBody,
+                    htmlBody:    $htmlBody,
                 );
                 $this->rememberRelayPort($port);
                 return;
