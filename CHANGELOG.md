@@ -1,5 +1,14 @@
 # Changelog
 
+## [4.0.56] — 2026-08
+
+### Fixed
+
+- Login Security detail dialog: the action buttons (confirm, false
+  positive, travelling, known location) now wrap onto multiple lines on
+  narrow screens instead of being squeezed unreadably; on very small
+  screens they stack full-width.
+
 ## [4.0.55] — 2026-08
 
 ### Fixed

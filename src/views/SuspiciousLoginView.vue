@@ -193,29 +193,31 @@
                 </div>
             </div>
             <template #actions>
-                <template v-if="!details.resolved">
-                    <NcButton v-if="isAdmin" type="primary" :disabled="resolving"
-                              data-testid="suspicious-login-confirm"
-                              @click="resolve(details, 'confirmed_threat')">
-                        {{ resolving === 'confirmed_threat' ? t('Saving…') : t('Bestätigen') }}
-                    </NcButton>
-                    <NcButton type="error" :disabled="!!resolving"
-                              data-testid="suspicious-login-false-positive"
-                              @click="resolve(details, 'false_positive')">
-                        {{ resolving === 'false_positive' ? t('Saving…') : t('Falsch positiv') }}
-                    </NcButton>
-                    <NcButton :disabled="!!resolving"
-                              data-testid="suspicious-login-travel"
-                              @click="resolve(details, 'user_travel')">
-                        {{ resolving === 'user_travel' ? t('Saving…') : t('Auf Reisen') }}
-                    </NcButton>
-                    <NcButton :disabled="!!resolving"
-                              data-testid="suspicious-login-known-location"
-                              @click="resolve(details, 'known_location')">
-                        {{ resolving === 'known_location' ? t('Saving…') : t('Bekannter Ort') }}
-                    </NcButton>
-                </template>
-                <NcButton type="secondary" @click="details = null">{{ t('Close') }}</NcButton>
+                <div class="login-dialog__actions">
+                    <template v-if="!details.resolved">
+                        <NcButton v-if="isAdmin" type="primary" :disabled="resolving"
+                                  data-testid="suspicious-login-confirm"
+                                  @click="resolve(details, 'confirmed_threat')">
+                            {{ resolving === 'confirmed_threat' ? t('Saving…') : t('Bestätigen') }}
+                        </NcButton>
+                        <NcButton type="error" :disabled="!!resolving"
+                                  data-testid="suspicious-login-false-positive"
+                                  @click="resolve(details, 'false_positive')">
+                            {{ resolving === 'false_positive' ? t('Saving…') : t('Falsch positiv') }}
+                        </NcButton>
+                        <NcButton :disabled="!!resolving"
+                                  data-testid="suspicious-login-travel"
+                                  @click="resolve(details, 'user_travel')">
+                            {{ resolving === 'user_travel' ? t('Saving…') : t('Auf Reisen') }}
+                        </NcButton>
+                        <NcButton :disabled="!!resolving"
+                                  data-testid="suspicious-login-known-location"
+                                  @click="resolve(details, 'known_location')">
+                            {{ resolving === 'known_location' ? t('Saving…') : t('Bekannter Ort') }}
+                        </NcButton>
+                    </template>
+                    <NcButton type="secondary" @click="details = null">{{ t('Close') }}</NcButton>
+                </div>
             </template>
         </NcDialog>
     </section>
@@ -557,6 +559,27 @@ export default {
 
 .resolution-info { margin-top: 8px; }
 .login-dialog__explain { font-size: .85rem; color: var(--color-text-maxcontrast); margin-bottom: 12px; line-height: 1.5; }
+
+/* Aktions-Buttons des Detail-Dialogs: umbrechen statt quetschen —
+   so bleibt die Beschriftung auch auf schmalen Screens lesbar. */
+.login-dialog__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    width: 100%;
+}
+
+@media (max-width: 480px) {
+    .login-dialog__actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .login-dialog__actions :deep(button) {
+        width: 100%;
+        justify-content: center;
+    }
+}
 
 @media (max-width: 768px) {
     .logins-table { font-size: .82rem; }
