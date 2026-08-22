@@ -93,6 +93,39 @@ class ApiController extends Controller {
             fn(string $pmail, string $id) => $this->pmg->releaseSpamMessage($pmail, $id));
     }
 
+    /**
+     * Kombi-Aktion: Nachricht freigeben UND Absender dauerhaft whitelisten.
+     */
+    #[NoAdminRequired]
+    public function releaseQuarantineWhitelist(): JSONResponse {
+        $ids = $this->extractIds();
+        $email = $this->request->getParam('email');
+        $entry = \trim((string) ($this->request->getParam('entry') ?? ''));
+        if ($entry === '') {
+            return new JSONResponse(['error' => 'Missing "entry" (sender address)'], Http::STATUS_BAD_REQUEST);
+        }
+
+        // Freigeben
+        if (\is_string($email) && $email !== '') {
+            $releaseResult = $this->bulkActionOnEmail('quarantine', 'release', $ids, $email,
+                fn(string $pmail, string $id) => $this->pmg->releaseSpamMessage($pmail, $id));
+        } else {
+            $releaseResult = $this->multiEmailBulkAction('quarantine', 'release', $ids,
+                fn(string $pmail, string $id) => $this->pmg->releaseSpamMessage($pmail, $id));
+        }
+
+        // Whitelist (alle Identitaeten, damit der Absender ueberall zugestellt wird)
+        $wlResult = $this->multiModifyAction(
+            fn(string $pmail) => $this->pmg->addToWhitelist($pmail, $entry),
+            'whitelist:add', $entry
+        );
+
+        return new JSONResponse([
+            'release' => $releaseResult->getData(),
+            'whitelist' => $wlResult->getData(),
+        ]);
+    }
+
     #[NoAdminRequired]
     public function deleteQuarantine(): JSONResponse {
         $ids = $this->extractIds();

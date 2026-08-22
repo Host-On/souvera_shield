@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.0.57] — 2026-08
+
+### Added
+
+- Kombi-Aktion "Freigeben + Whitelist" (POST /api/quarantine/release-whitelist):
+  gibt eine Quarantäne-Nachricht frei und nimmt den Absender zugleich in die
+  Whitelist aller Identitäten auf.
+
 ## [4.0.56] — 2026-08
 
 ### Fixed

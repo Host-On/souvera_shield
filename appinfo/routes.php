@@ -24,6 +24,7 @@ return [
         ['name' => 'api#quarantine',          'url' => '/api/quarantine',              'verb' => 'GET'],
         ['name' => 'api#viewQuarantine',      'url' => '/api/quarantine/view',         'verb' => 'GET'],
         ['name' => 'api#releaseQuarantine',   'url' => '/api/quarantine/release',      'verb' => 'POST'],
+        ['name' => 'api#releaseQuarantineWhitelist', 'url' => '/api/quarantine/release-whitelist', 'verb' => 'POST'],
         ['name' => 'api#deleteQuarantine',    'url' => '/api/quarantine/delete',       'verb' => 'POST'],
         ['name' => 'api#exportQuarantine',    'url' => '/api/quarantine/export.csv',   'verb' => 'GET'],
 
